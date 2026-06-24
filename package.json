@@ -1,0 +1,21 @@
+{
+    "name": "m1s2",
+    "private": true,
+    "workspaces": [
+      "apps/*",
+      "packages/*"
+    ],
+    "engines": {
+      "node": ">=24"
+    },
+    "scripts": {
+      "lint": "eslint .",
+      "format": "prettier --write .",
+      "build": "npm run build --workspaces --if-present"
+    },
+    "devDependencies": {
+      "eslint": "^9",
+      "prettier": "^3",
+      "typescript": "^5"
+    }
+  }
