@@ -3,7 +3,8 @@ import { CompanyModel } from '../../models/company.js';
 import { UserModel } from '../../models/user.js';
 import { AppError } from '../../utils/app-error.js';
 import { sendConfirmationEmail } from '../../utils/email.js';
-import type { RegisterInput } from './auth.schema.js';
+import type { RegisterInput, LoginInput } from './auth.schema.js';
+import { signAccessToken, signRefreshToken } from './jwt.js';
 
 export async function registerWebmaster(input: RegisterInput) {
     const email = input.user.email.toLowerCase();
@@ -41,5 +42,40 @@ export async function registerWebmaster(input: RegisterInput) {
     return {
         user: { id: user._id, email: user.email, role: user.role, status: user.status },
         company: { id: company._id, name: company.name, validationStatus: company.validationStatus },
+    };
+}
+
+export async function loginUser(input: LoginInput) {
+    const email = input.email.toLowerCase();
+
+    // 1. Trouver le compte
+    const user = await UserModel.findOne({ email });
+
+    // 2. Vérifier le mot de passe (même erreur si user absent OU mot de passe faux)
+    const passwordOk = user ? await argon2.verify(user.passwordHash, input.password) : false;
+    if (!user || !passwordOk) {
+        throw new AppError(401, 'invalid_credentials', 'Identifiants invalides.');
+    }
+
+    // 3. Bloquer si le compte n'est pas encore validé
+    if (user.status === 'pending') {
+        throw new AppError(403, 'account_pending', "Votre compte est en attente de validation.");
+    }
+
+    // 4. Construire le contenu des jetons
+    const payload = {
+        sub: user._id.toString(),
+        role: user.role,
+        companyId: user.companyId?.toString(),
+    };
+
+    // 5. Générer les deux jetons
+    const accessToken = signAccessToken(payload);
+    const refreshToken = signRefreshToken(payload);
+
+    return {
+        accessToken,
+        refreshToken,
+        user: { id: user._id, email: user.email, role: user.role },
     };
 }

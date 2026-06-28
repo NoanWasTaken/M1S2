@@ -13,4 +13,6 @@ export const env = {
   mongoUri: required('MONGODB_URI'),
   corsOrigin: process.env.CORS_DASHBOARD_ORIGIN ?? 'http://localhost:3000',
   nodeEnv: process.env.NODE_ENV ?? 'development',
+  jwtAccessSecret: required('JWT_ACCESS_SECRET'),
+  jwtRefreshSecret: required('JWT_REFRESH_SECRET'),
 };
