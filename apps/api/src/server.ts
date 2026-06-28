@@ -5,6 +5,7 @@ import { env } from './config/env.js';
 import { connectToDatabase } from './config/db.js';
 import authRouter from './modules/auth/auth.routes.js';
 import { errorHandler } from './middlewares/error-handler.js';
+import cookieParser from 'cookie-parser'; // for parse cookies
 
 async function start() {
   await connectToDatabase(env.mongoUri);
@@ -14,6 +15,7 @@ async function start() {
   app.use(helmet());
   app.use(cors({ origin: env.corsOrigin, credentials: true }));
   app.use(express.json());
+  app.use(cookieParser());
 
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok' });
