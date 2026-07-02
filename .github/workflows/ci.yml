@@ -19,7 +19,7 @@ jobs:
           cache: npm
 
       - name: Installer les dépendances
-        run: npm ci
+        run: npm ci --include=optional
 
       - name: Lint
         run: npm run lint

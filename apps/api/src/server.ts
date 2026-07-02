@@ -1,8 +1,36 @@
 import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import { env } from './config/env.js';
+import { connectToDatabase } from './config/db.js';
+import authRouter from './modules/auth/auth.routes.js';
+import { errorHandler } from './middlewares/error-handler.js';
+import adminRouter from './modules/admin/admin.routes.js';
+import cookieParser from 'cookie-parser'; // for parse cookies
 
-const app = express();
-const port = process.env.PORT ?? 4000;
+async function start() {
+  await connectToDatabase(env.mongoUri);
 
-app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+  const app = express();
 
-app.listen(port, () => console.log(`API prête sur http://localhost:${port}`));
+  app.use(helmet());
+  app.use(cors({ origin: env.corsOrigin, credentials: true }));
+  app.use(express.json());
+  app.use(cookieParser());
+
+  app.get('/health', (_req, res) => {
+    res.json({ status: 'ok' });
+  });
+
+  app.use('/api/v1/auth', authRouter);
+  app.use('/api/v1/admin', adminRouter);
+
+  // ALWAYS AFTER the routes
+  app.use(errorHandler);
+
+  app.listen(env.port, () => {
+    console.log(`API ready on http://localhost:${env.port}`);
+  });
+}
+
+start();
