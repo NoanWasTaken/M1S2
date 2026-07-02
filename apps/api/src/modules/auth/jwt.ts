@@ -5,6 +5,7 @@ export type TokenPayload = {
     sub: string; // user id
     role: 'admin' | 'webmaster';
     companyId?: string;
+    impersonatedBy?: string; // admin id
 };
 
 export function signAccessToken(payload: TokenPayload): string {

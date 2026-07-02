@@ -5,6 +5,7 @@ import { env } from './config/env.js';
 import { connectToDatabase } from './config/db.js';
 import authRouter from './modules/auth/auth.routes.js';
 import { errorHandler } from './middlewares/error-handler.js';
+import adminRouter from './modules/admin/admin.routes.js';
 import cookieParser from 'cookie-parser'; // for parse cookies
 
 async function start() {
@@ -22,6 +23,7 @@ async function start() {
   });
 
   app.use('/api/v1/auth', authRouter);
+  app.use('/api/v1/admin', adminRouter);
 
   // ALWAYS AFTER the routes
   app.use(errorHandler);
