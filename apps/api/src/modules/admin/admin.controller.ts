@@ -7,16 +7,19 @@ export async function getCompanies(_req: Request, res: Response) {
 }
 
 export async function postValidateCompany(req: Request, res: Response) {
-    const company = await validateCompany(req.params.id, req.user!.sub);
+    const companyId = req.params.id as string;
+    const company = await validateCompany(companyId, req.user!.sub);
     res.json({ company });
 }
 
 export async function postRejectCompany(req: Request, res: Response) {
-    const company = await rejectCompany(req.params.id);
+    const companyId = req.params.id as string;
+    const company = await rejectCompany(companyId);
     res.json({ company });
 }
 
 export async function postImpersonate(req: Request, res: Response) {
-    const result = await impersonateWebmaster(req.params.id, req.user!.sub);
+    const webmasterId = req.params.id as string;
+    const result = await impersonateWebmaster(webmasterId, req.user!.sub);
     res.json(result);
 }
