@@ -33,3 +33,7 @@ export async function login(req: Request, res: Response) {
 
     res.json({ accessToken, user });
 }
+
+export async function me(req: Request, res: Response) {
+    res.json({user: req.user});
+}
