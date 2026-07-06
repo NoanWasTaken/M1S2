@@ -8,5 +8,11 @@ export const createApplicationSchema = z.object({
     companyId: z.string().optional(),
 });
 
-export type CreateApplicationInput = z.infer<typeof createApplicationSchema>;
+export const updateOriginsSchema = z.object({
+    allowedOrigins: z
+        .array(z.string().url("Each origin must be a valid URL (ex. https://mysite.fr)"))
+        .max(20, 'Maximum 20 allowed origins'),
+});
 
+export type CreateApplicationInput = z.infer<typeof createApplicationSchema>;
+export type UpdateOriginsInput = z.infer<typeof updateOriginsSchema>;

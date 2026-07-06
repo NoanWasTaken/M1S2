@@ -15,6 +15,11 @@ const userSchema = new Schema(
             enum: ['pending', 'active', 'suspended'],
             default: 'pending',
         },
+        teamRole: {
+            type: String,
+            enum: ['owner', 'member'],
+            default: null,
+        },
     },
     { timestamps: true },
 );

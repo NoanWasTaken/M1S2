@@ -8,6 +8,7 @@ declare global {
                 sub: string;
                 role: 'admin' | 'webmaster';
                 companyId?: string;
+                teamRole?: 'owner' | 'member' | null;
                 impersonatedBy?: string; // admin id
             };
         }
