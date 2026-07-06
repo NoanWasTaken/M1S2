@@ -2,9 +2,6 @@ import { ApplicationModel } from '../../models/application.js';
 import { AppError } from '../../utils/app-error.js';
 import { generateAppId } from '../../utils/generate-id.js';
 import { generateAppSecret, hashAppSecret } from '../../utils/app-secret.js';
-import type { UpdateOriginsInput } from './application.schema.js';
-
-
 
 type Creator = {
     userId: string;
