@@ -48,28 +48,28 @@ export async function registerWebmaster(input: RegisterInput) {
 export async function loginUser(input: LoginInput) {
     const email = input.email.toLowerCase();
 
-    // 1. Trouver le compte
+    // 1. access the user
     const user = await UserModel.findOne({ email });
 
-    // 2. Vérifier le mot de passe (même erreur si user absent OU mot de passe faux)
+    // 2. check the password (same error if user absent OR password is incorrect)
     const passwordOk = user ? await argon2.verify(user.passwordHash, input.password) : false;
     if (!user || !passwordOk) {
-        throw new AppError(401, 'invalid_credentials', 'Identifiants invalides.');
+        throw new AppError(401, 'invalid_credentials', 'Invalid credentials.');
     }
 
-    // 3. Bloquer si le compte n'est pas encore validé
+    // 3. block if the account is not yet validated
     if (user.status === 'pending') {
-        throw new AppError(403, 'account_pending', "Votre compte est en attente de validation.");
+        throw new AppError(403, 'account_pending', "Your account is pending validation.");
     }
 
-    // 4. Construire le contenu des jetons
+    // 4. build the token payload
     const payload = {
         sub: user._id.toString(),
         role: user.role,
         companyId: user.companyId?.toString(),
     };
 
-    // 5. Générer les deux jetons
+    // 5. generate the two tokens
     const accessToken = signAccessToken(payload);
     const refreshToken = signRefreshToken(payload);
 
