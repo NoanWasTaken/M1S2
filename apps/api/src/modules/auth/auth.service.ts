@@ -33,6 +33,7 @@ export async function registerWebmaster(input: RegisterInput) {
         role: 'webmaster',
         status: 'pending',
         companyId: company._id,
+        teamRole: 'owner',
     });
 
     // 5. Send the confirmation email (placeholder)
@@ -67,6 +68,7 @@ export async function loginUser(input: LoginInput) {
         sub: user._id.toString(),
         role: user.role,
         companyId: user.companyId?.toString(),
+        teamRole: user.teamRole,
     };
 
     // 5. generate the two tokens

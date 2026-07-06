@@ -5,6 +5,7 @@ export type TokenPayload = {
     sub: string; // user id
     role: 'admin' | 'webmaster';
     companyId?: string;
+    teamRole?: 'owner' | 'member' | null;
     impersonatedBy?: string; // admin id
 };
 
