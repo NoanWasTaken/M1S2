@@ -9,7 +9,6 @@ import adminRouter from './modules/admin/admin.routes.js';
 import applicationRouter from './modules/applications/application.routes.js';
 import teamRouter from './modules/team/team.routes.js';
 import ingestionRouter from './modules/ingestion/ingestion.routes.js';
-import trackingRouter from './modules/tracking/tracking.routes.js';
 import cookieParser from 'cookie-parser'; // for parse cookies
 
 async function start() {
@@ -17,8 +16,13 @@ async function start() {
 
   const app = express();
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
   app.use(cors({ origin: env.corsOrigin, credentials: true }));
+
   app.use(express.json());
   app.use(cookieParser());
 
@@ -28,13 +32,20 @@ async function start() {
 
   app.use('/api/v1/auth', authRouter);
   app.use('/api/v1/admin', adminRouter);
-
   app.use('/api/v1/applications', applicationRouter);
   app.use('/api/v1/team', teamRouter);
 
-  app.use('/api/v1/ingestion', ingestionRouter);
-  app.use('/api/v1/tracking', trackingRouter);
-  // ALWAYS AFTER the routes
+  const ingestionCors = cors({
+    origin: true,
+    methods: ['POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'x-app-id'],
+  });
+
+  const ingestionHelmet = helmet({
+    crossOriginResourcePolicy: false,
+  });
+
+  app.use('/api/v1/ingestion', ingestionHelmet, ingestionCors, ingestionRouter);
   app.use(errorHandler);
 
   app.listen(env.port, () => {
