@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslations } from 'next-intl';
 import { registerSchema, type RegisterInput } from '@m1s2/shared';
 import { useAuth } from '@/providers/auth-provider';
 import { GuestOnly } from '@/components/auth/guest-only';
@@ -15,6 +16,7 @@ import { Button } from '@/components/ui/button';
 export default function RegisterPage() {
   const router = useRouter();
   const { register: registerUser } = useAuth();
+  const t = useTranslations('auth.register');
   const [apiError, setApiError] = useState<string | null>(null);
 
   const form = useForm<RegisterInput>({
@@ -36,8 +38,8 @@ export default function RegisterPage() {
         err && typeof err === 'object' && 'response' in err
           ? (err as { response: { data: { message?: string } } }).response?.data
               ?.message
-          : 'Une erreur est survenue';
-      setApiError(message || 'Erreur lors de l\'inscription');
+          : t('submit');
+      setApiError(message || t('submit'));
     }
   });
 
@@ -61,7 +63,7 @@ export default function RegisterPage() {
             </svg>
           </div>
           <h1 className="text-lg font-semibold text-text-primary">
-            Créer un compte
+            {t('title')}
           </h1>
         </div>
 
@@ -74,82 +76,82 @@ export default function RegisterPage() {
 
           <div className="space-y-4">
             <h2 className="text-xs font-medium uppercase tracking-wider text-text-secondary">
-              Société
+              {t('companySection')}
             </h2>
 
             <FormField
               control={form.control}
               name="company.name"
-              label="Nom de la société"
-              placeholder="Ma Société"
+              label={t('companyName')}
+              placeholder={t('companyNamePlaceholder')}
             />
 
             <FormField
               control={form.control}
               name="company.baseUrl"
-              label="URL du site"
+              label={t('siteUrl')}
               type="url"
-              placeholder="https://monsite.fr"
+              placeholder={t('siteUrlPlaceholder')}
             />
 
             <FormField
               control={form.control}
               name="company.kbisFileRef"
-              label="Référence KBIS"
-              placeholder="Numéro ou référence du document"
+              label={t('kbis')}
+              placeholder={t('kbisPlaceholder')}
             />
 
             <FormField
               control={form.control}
               name="company.contact.name"
-              label="Nom du contact"
-              placeholder="Jean Dupont"
+              label={t('contactName')}
+              placeholder={t('contactNamePlaceholder')}
             />
 
             <FormField
               control={form.control}
               name="company.contact.email"
-              label="Email du contact"
+              label={t('contactEmail')}
               type="email"
-              placeholder="contact@example.fr"
+              placeholder={t('contactEmailPlaceholder')}
             />
 
             <FormField
               control={form.control}
               name="company.contact.phone"
-              label="Téléphone (optionnel)"
+              label={t('contactPhone')}
               type="tel"
-              placeholder="+33 1 23 45 67 89"
+              placeholder={t('contactPhonePlaceholder')}
             />
           </div>
 
           <div className="space-y-4">
             <h2 className="text-xs font-medium uppercase tracking-wider text-text-secondary">
-              Compte utilisateur
+              {t('accountSection')}
             </h2>
 
             <FormField
               control={form.control}
               name="user.email"
-              label="Email"
+              label={t('userEmail')}
               type="email"
-              placeholder="vous@exemple.fr"
+              placeholder={t('userEmailPlaceholder')}
             />
 
             <FormField
               control={form.control}
               name="user.password"
-              label="Mot de passe"
+              label={t('password')}
               type="password"
-              placeholder="8 caractères minimum"
+              placeholder={t('passwordPlaceholder')}
             />
 
             <FormField
               control={form.control}
               name="user.confirmPassword"
-              label="Confirmer le mot de passe"
+              label={t('confirmPassword')}
               type="password"
-              placeholder="Répétez le mot de passe"
+              placeholder={t('confirmPasswordPlaceholder')}
             />
           </div>
 
@@ -159,17 +161,17 @@ export default function RegisterPage() {
             size="lg"
             isLoading={form.formState.isSubmitting}
           >
-            Créer mon compte
+            {t('submit')}
           </Button>
         </form>
 
         <p className="text-center text-sm text-text-secondary">
-          Déjà un compte ?{' '}
+          {t('hasAccount')}{' '}
           <Link
             href="/login"
             className="font-medium text-accent hover:underline"
           >
-            Se connecter
+            {t('login')}
           </Link>
         </p>
       </Card>

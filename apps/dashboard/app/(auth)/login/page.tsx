@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslations } from 'next-intl';
 import { loginSchema, type LoginInput } from '@m1s2/shared';
 import { useAuth } from '@/providers/auth-provider';
 import { GuestOnly } from '@/components/auth/guest-only';
@@ -15,6 +16,7 @@ import { Button } from '@/components/ui/button';
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+  const t = useTranslations('auth.login');
   const [apiError, setApiError] = useState<string | null>(null);
 
   const form = useForm<LoginInput>({
@@ -32,8 +34,8 @@ export default function LoginPage() {
         err && typeof err === 'object' && 'response' in err
           ? (err as { response: { data: { message?: string } } }).response?.data
               ?.message
-          : 'Une erreur est survenue';
-      setApiError(message || 'Email ou mot de passe incorrect');
+          : t('error');
+      setApiError(message || t('error'));
     }
   });
 
@@ -57,7 +59,7 @@ export default function LoginPage() {
             </svg>
           </div>
           <h1 className="text-lg font-semibold text-text-primary">
-            Connexion
+            {t('title')}
           </h1>
         </div>
 
@@ -71,17 +73,17 @@ export default function LoginPage() {
           <FormField
             control={form.control}
             name="email"
-            label="Email"
+            label={t('email')}
             type="email"
-            placeholder="vous@exemple.fr"
+            placeholder={t('emailPlaceholder')}
           />
 
           <FormField
             control={form.control}
             name="password"
-            label="Mot de passe"
+            label={t('password')}
             type="password"
-            placeholder="••••••••"
+            placeholder={t('passwordPlaceholder')}
           />
 
           <Button
@@ -90,17 +92,17 @@ export default function LoginPage() {
             size="lg"
             isLoading={form.formState.isSubmitting}
           >
-            Se connecter
+            {t('submit')}
           </Button>
         </form>
 
         <p className="text-center text-sm text-text-secondary">
-          Pas encore de compte ?{' '}
+          {t('noAccount')}{' '}
           <Link
             href="/register"
             className="font-medium text-accent hover:underline"
           >
-            Créer un compte
+            {t('createAccount')}
           </Link>
         </p>
       </Card>
