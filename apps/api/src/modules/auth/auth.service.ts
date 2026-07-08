@@ -4,7 +4,7 @@ import { UserModel } from '../../models/user.js';
 import { AppError } from '../../utils/app-error.js';
 import { sendConfirmationEmail } from '../../utils/email.js';
 import type { RegisterInput, LoginInput } from './auth.schema.js';
-import { signAccessToken, signRefreshToken } from './jwt.js';
+import { signAccessToken, signRefreshToken, verifyRefreshToken, type TokenPayload } from './jwt.js';
 
 export async function registerWebmaster(input: RegisterInput) {
     const email = input.user.email.toLowerCase();
@@ -80,4 +80,31 @@ export async function loginUser(input: LoginInput) {
         refreshToken,
         user: { id: user._id, email: user.email, role: user.role },
     };
+}
+
+export async function refreshUserSession(refreshToken: string) {
+    let payload: TokenPayload;
+    try {
+        payload = verifyRefreshToken(refreshToken);
+    } catch {
+        throw new AppError(401, 'invalid_refresh_token', 'Invalid or expired refresh token.');
+    }
+
+    const userExists = await UserModel.exists({ _id: payload.sub });
+    if (!userExists) {
+        throw new AppError(401, 'user_not_found', 'User no longer exists.');
+    }
+
+    const accessToken = signAccessToken({
+        sub: payload.sub,
+        role: payload.role,
+        companyId: payload.companyId,
+        teamRole: payload.teamRole,
+    });
+
+    return { accessToken };
+}
+
+export async function logoutUser() {
+    return { message: 'Déconnecté' };
 }
