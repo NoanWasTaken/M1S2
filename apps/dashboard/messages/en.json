@@ -6,7 +6,9 @@
     "error": "An error occurred",
     "retry": "Retry",
     "back": "Back",
-    "help": "Help"
+    "help": "Help",
+    "edit": "Edit",
+    "done": "Done"
   },
   "auth": {
     "login": {
