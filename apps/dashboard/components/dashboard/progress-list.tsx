@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import { Card } from '@/components/ui/card';
 
 type DeviceItem = {
@@ -29,10 +32,12 @@ const iconMap: Record<string, React.ReactNode> = {
   ),
 };
 
-export function ProgressList({ data, title = 'Appareils' }: ProgressListProps) {
+export function ProgressList({ data, title }: ProgressListProps) {
+  const t = useTranslations('dashboard');
+  const displayTitle = title ?? t('devices');
   return (
     <Card className="flex flex-col gap-4">
-      <h3 className="text-sm font-semibold text-text-primary">{title}</h3>
+      <h3 className="text-sm font-semibold text-text-primary">{displayTitle}</h3>
 
       <div className="flex flex-col gap-3">
         {data.map((item) => (

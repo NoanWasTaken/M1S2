@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 const navItems = [
-  { href: '/dashboard', label: "Vue d'ensemble", icon: 'overview' },
-  { href: '/pages', label: 'Pages', icon: 'pages' },
-  { href: '/events', label: 'Événements', icon: 'events' },
-  { href: '/settings', label: 'Paramètres', icon: 'settings' },
+  { href: '/dashboard', key: 'overview', icon: 'overview' },
+  { href: '/pages', key: 'pages', icon: 'pages' },
+  { href: '/events', key: 'events', icon: 'events' },
+  { href: '/settings', key: 'settings', icon: 'settings' },
 ];
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -36,6 +37,8 @@ const iconMap: Record<string, React.ReactNode> = {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const tNav = useTranslations('nav');
+  const tCommon = useTranslations('common');
 
   return (
     <aside className="flex w-72 flex-col border-r border-border-subtle bg-[var(--bg-sidebar)]">
@@ -46,7 +49,7 @@ export function Sidebar() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             </svg>
           </div>
-          <span className="text-base font-bold text-text-primary">Analytix</span>
+          <span className="text-base font-bold text-text-primary">{tCommon('appName')}</span>
         </div>
 
         <button
@@ -73,7 +76,7 @@ export function Sidebar() {
                 }`}
               >
                 {iconMap[item.icon]}
-                <span className="font-medium">{item.label}</span>
+                <span className="font-medium">{tNav(item.key)}</span>
               </Link>
             );
           })}
@@ -85,7 +88,7 @@ export function Sidebar() {
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
         </span>
-        <span className="text-sm text-text-secondary">Temps réel actif</span>
+        <span className="text-sm text-text-secondary">{tNav('liveActive')}</span>
       </div>
     </aside>
   );
