@@ -11,10 +11,16 @@ export const registerSchema = z.object({
       phone: z.string().optional(),
     }),
   }),
-  user: z.object({
-    email: z.string().email('Invalid email'),
-    password: z.string().min(8, 'Password must be at least 8 characters long'),
-  }),
+  user: z
+    .object({
+      email: z.string().email('Invalid email'),
+      password: z.string().min(8, 'Password must be at least 8 characters long'),
+      confirmPassword: z.string().min(1, 'Please confirm your password'),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: 'Passwords do not match',
+      path: ['confirmPassword'],
+    }),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
