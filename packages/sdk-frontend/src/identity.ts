@@ -8,10 +8,10 @@ function generateId(): string {
 }
 
 function safeGet(key: string): string | null {
-    try { return localStorage.getItem(key); } catch { return null; }
+    try { return localStorage.getItem(key); } catch { /* empty */ return null; }
 }
 function safeSet(key: string, value: string): void {
-    try { localStorage.setItem(key, value); } catch {}
+    try { localStorage.setItem(key, value); } catch { /* empty */ }
 }
 
 export function getVisitorId(): string {
@@ -30,7 +30,7 @@ export function getSessionId(): string {
                 safeSet(SESSION_KEY, JSON.stringify({ id: s.id, lastActivity: now }));
                 return s.id;
             }
-        } catch {}
+        } catch { /* empty */ }
     }
     const id = generateId();
     safeSet(SESSION_KEY, JSON.stringify({ id, lastActivity: now }));
