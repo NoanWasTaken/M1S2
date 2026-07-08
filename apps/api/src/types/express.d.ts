@@ -11,6 +11,10 @@ declare global {
                 teamRole?: 'owner' | 'member' | null;
                 impersonatedBy?: string; // admin id
             };
+            application?: {
+                id: string;
+                appId: string;
+            };
         }
     }
 }
