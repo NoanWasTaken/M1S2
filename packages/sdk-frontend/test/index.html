@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Test SDK M1S2</title>
+    <style>
+      body { font-family: sans-serif; max-width: 600px; margin: 40px auto; }
+      .box { padding: 20px; border: 1px solid #ccc; border-radius: 8px; margin: 16px 0; }
+      button, a.btn { display: inline-block; padding: 10px 16px; margin: 6px;
+        border: 1px solid #333; border-radius: 6px; background: #eee;
+        text-decoration: none; color: #000; cursor: pointer; }
+      h2 { font-size: 16px; }
+    </style>
+  </head>
+  <body>
+    <h1>Page de test du SDK</h1>
+
+    <div class="box">
+      <h2>Vrais liens (navigation)</h2>
+      <a href="https://example.com">Lien externe</a>
+      <a href="/produits">Lien interne</a>
+    </div>
+
+    <div class="box">
+      <h2>Faux boutons-liens (action déguisée)</h2>
+      <a href="#" class="btn">Lien qui n'amène nulle part</a>
+      <a href="javascript:void(0)" class="btn">Lien JS</a>
+    </div>
+
+    <div class="box">
+      <h2>Vrais boutons (action)</h2>
+      <button id="btn-panier">Ajouter au panier</button>
+      <button onclick="alert('clic')">Bouton avec action JS</button>
+    </div>
+
+    <!-- On charge le SDK compilé -->
+    <script>
+        window.__ANALYTICS_DEBUG__ = true;
+      </script>
+      <script type="module">
+        import { Analytics } from '../dist/index.js';
+        Analytics.init({
+          appId: 'app_cf61cb1988aef04bc430632d0ba4a278',
+          endpoint: 'http://localhost:4000/api/v1/ingestion/browser',
+        });
+        console.log('SDK initialisé — clique et survole les éléments.');
+      </script>
+  </body>
+</html>

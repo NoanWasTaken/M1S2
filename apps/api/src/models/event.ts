@@ -3,6 +3,8 @@ import { Schema, model, InferSchemaType } from 'mongoose';
 const eventSchema = new Schema(
     {
         appId: { type: String, required: true, index: true },
+        visitorId: { type: String, index: true },
+        sessionId: { type: String, index: true },
         type: { type: String, required: true, index: true },
         url: { type: String },
         occurredAt: { type: Date, required: true, index: true },
