@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import {
   AreaChart as RechartsAreaChart,
   Area,
@@ -22,20 +23,21 @@ type AreaChartProps = {
 };
 
 export function AreaChart({ data }: AreaChartProps) {
+  const t = useTranslations('dashboard');
   return (
     <Card className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-text-primary">
-          Trafic aujourd&apos;hui
+          {t('trafficToday')}
         </h3>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <span className="h-0.5 w-4 rounded bg-[#38bdf8]" />
-            <span className="text-xs text-text-secondary">Sessions</span>
+            <span className="text-xs text-text-secondary">{t('sessions')}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="h-0.5 w-4 rounded bg-[#818cf8]" />
-            <span className="text-xs text-text-secondary">Pages vues</span>
+            <span className="text-xs text-text-secondary">{t('pageViews')}</span>
           </div>
         </div>
       </div>

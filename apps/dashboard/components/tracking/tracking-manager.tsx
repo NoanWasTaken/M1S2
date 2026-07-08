@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api-client';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -38,6 +39,7 @@ type Props = {
 
 export function TrackingManager({ mode }: Props) {
     const { user, isAuthenticated, isLoading } = useAuth();
+    const t = useTranslations('tracking');
 
     const [companies, setCompanies] = useState<Company[]>([]);
     const [applications, setApplications] = useState<Application[]>([]);
@@ -53,7 +55,7 @@ export function TrackingManager({ mode }: Props) {
     const [tagDrafts, setTagDrafts] = useState<Record<string, string>>({});
     const [funnelDrafts, setFunnelDrafts] = useState<Record<string, string>>({});
 
-    const [loadingState, setLoadingState] = useState('Chargement...');
+    const [loadingState, setLoadingState] = useState('');
     const [error, setError] = useState<string | null>(null);
 
     const selectedApplication = useMemo(
@@ -75,7 +77,7 @@ export function TrackingManager({ mode }: Props) {
         async function loadApplications() {
             try {
                 setError(null);
-                setLoadingState('Chargement des applications...');
+                setLoadingState(t('loadingApplications'));
 
                 if (authenticatedUser.role === 'admin') {
                     const { data } = await api.get('/api/v1/admin/companies');
@@ -90,7 +92,7 @@ export function TrackingManager({ mode }: Props) {
                     if (!companyId) {
                         setApplications([]);
                         setSelectedApplicationId('');
-                        setLoadingState('Aucune entreprise disponible');
+                        setLoadingState(t('noCompany'));
                         return;
                     }
 
@@ -101,7 +103,7 @@ export function TrackingManager({ mode }: Props) {
                     setApplications(nextApplications);
                     const appId = nextApplications[0]?._id || '';
                     setSelectedApplicationId(appId);
-                    setLoadingState(appId ? '' : 'Aucune application disponible');
+                    setLoadingState(appId ? '' : t('noApplication'));
                     return;
                 }
 
@@ -111,10 +113,10 @@ export function TrackingManager({ mode }: Props) {
                 const nextApplications = data.applications as Application[];
                 setApplications(nextApplications);
                 setSelectedApplicationId(nextApplications[0]?._id || '');
-                setLoadingState(nextApplications[0]?._id ? '' : 'Aucune application disponible');
+                setLoadingState(nextApplications[0]?._id ? '' : t('noApplication'));
             } catch {
                 if (cancelled) return;
-                setError('Impossible de charger les applications.');
+                setError(t('errorLoadingApplications'));
                 setLoadingState('');
             }
         }
@@ -168,7 +170,7 @@ export function TrackingManager({ mode }: Props) {
                 setFunnelDrafts(nextFunnelDrafts);
             } catch {
                 if (cancelled) return;
-                setError('Impossible de charger les tags et funnels.');
+                setError(t('errorLoadingTracking'));
             }
         }
 
@@ -277,15 +279,15 @@ export function TrackingManager({ mode }: Props) {
     }
 
     if (isLoading) {
-        return <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-white/70">Chargement de la session...</div>;
+        return <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-white/70">{t('loadingSession')}</div>;
     }
 
     if (!isAuthenticated || !user) {
         return (
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-white/70">
-                <p className="text-sm">Vous devez être connecté pour gérer les tracking tags et funnels.</p>
+                <p className="text-sm">{t('notAuthenticated')}</p>
                 <Link href="/login" className="mt-4 inline-flex rounded-full bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">
-                    Aller à la connexion
+                    {t('goToLogin')}
                 </Link>
             </div>
         );
@@ -301,27 +303,23 @@ export function TrackingManager({ mode }: Props) {
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <div>
                         <p className={`text-xs uppercase tracking-[0.3em] ${mode === 'tags' ? 'text-cyan-200/80' : 'text-emerald-200/80'}`}>
-                            {mode === 'tags' ? 'Tracking tags' : 'Conversion funnels'}
+                            {mode === 'tags' ? t('tagsTitle') : t('funnelsTitle')}
                         </p>
                         <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-                            {mode === 'tags'
-                                ? 'Des balises simples, stables et traçables.'
-                                : 'Un tunnel est une séquence ordonnée de tags.'}
+                            {mode === 'tags' ? t('tagsHero') : t('funnelsHero')}
                         </h1>
                         <p className="mt-4 max-w-3xl text-sm leading-7 text-white/70 sm:text-base">
-                            {mode === 'tags'
-                                ? 'Créer des tags avec un ID autogénéré, les modifier uniquement sur le commentaire et conserver un historique via soft delete.'
-                                : 'Composer des funnels en choisissant des tags existants dans un ordre précis, puis suivre les conversions et les abandons.'}
+                            {mode === 'tags' ? t('tagsDescription') : t('funnelsDescription')}
                         </p>
                     </div>
 
                     <div className="flex flex-wrap gap-3 text-sm text-white/70">
                         <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2">
-                            {user.role === 'admin' ? 'Mode admin' : 'Mode webmaster'}
+                            {user.role === 'admin' ? t('modeAdmin') : t('modeWebmaster')}
                         </span>
                         {selectedApplication ? (
                             <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2">
-                                App active: {selectedApplication.name}
+                                {t('appActive')}: {selectedApplication.name}
                             </span>
                         ) : null}
                     </div>
@@ -336,11 +334,11 @@ export function TrackingManager({ mode }: Props) {
 
             <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
                 <article className="rounded-[2rem] border border-white/10 bg-slate-950/90 p-6">
-                    <p className="text-sm uppercase tracking-[0.2em] text-white/45">Contexte</p>
+                    <p className="text-sm uppercase tracking-[0.2em] text-white/45">{t('context')}</p>
 
                     {user.role === 'admin' ? (
                         <label className="mt-5 block space-y-2 text-sm">
-                            <span className="text-white/65">Entreprise</span>
+                            <span className="text-white/65">{t('company')}</span>
                             <select
                                 value={selectedCompanyId}
                                 onChange={(event) => setSelectedCompanyId(event.target.value)}
@@ -356,7 +354,7 @@ export function TrackingManager({ mode }: Props) {
                     ) : null}
 
                     <label className="mt-5 block space-y-2 text-sm">
-                        <span className="text-white/65">Application</span>
+                        <span className="text-white/65">{t('application')}</span>
                         <select
                             value={selectedApplicationId}
                             onChange={(event) => setSelectedApplicationId(event.target.value)}
@@ -374,13 +372,13 @@ export function TrackingManager({ mode }: Props) {
 
                     {mode === 'tags' ? (
                         <div className="mt-8 space-y-4">
-                            <p className="text-sm uppercase tracking-[0.2em] text-white/45">Créer un tag</p>
+                            <p className="text-sm uppercase tracking-[0.2em] text-white/45">{t('createTag')}</p>
                             <label className="block space-y-2 text-sm">
-                                <span className="text-white/65">Commentaire</span>
+                                <span className="text-white/65">{t('comment')}</span>
                                 <input
                                     value={tagComment}
                                     onChange={(event) => setTagComment(event.target.value)}
-                                    placeholder="Ex: CTA pricing, hero click, trial started"
+                                    placeholder={t('tagPlaceholder')}
                                     className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition placeholder:text-white/25 focus:border-cyan-400/60"
                                 />
                             </label>
@@ -388,25 +386,25 @@ export function TrackingManager({ mode }: Props) {
                                 onClick={createTag}
                                 className="rounded-full bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
                             >
-                                Générer le tag
+                                {t('generateTag')}
                             </button>
                         </div>
                     ) : (
                         <div className="mt-8 space-y-4">
-                            <p className="text-sm uppercase tracking-[0.2em] text-white/45">Composer un funnel</p>
+                            <p className="text-sm uppercase tracking-[0.2em] text-white/45">{t('createFunnel')}</p>
                             <label className="block space-y-2 text-sm">
-                                <span className="text-white/65">Commentaire</span>
+                                <span className="text-white/65">{t('comment')}</span>
                                 <input
                                     value={funnelComment}
                                     onChange={(event) => setFunnelComment(event.target.value)}
-                                    placeholder="Ex: conversion checkout V1"
+                                    placeholder={t('funnelPlaceholder')}
                                     className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition placeholder:text-white/25 focus:border-emerald-400/60"
                                 />
                             </label>
                             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                                <p className="text-sm font-medium text-white">Étapes sélectionnées</p>
+                                <p className="text-sm font-medium text-white">{t('selectedSteps')}</p>
                                 {selectedTags.length === 0 ? (
-                                    <p className="mt-2 text-sm text-white/45">Ajoute des tags depuis la liste de droite.</p>
+                                    <p className="mt-2 text-sm text-white/45">{t('addTagsHint')}</p>
                                 ) : (
                                     <div className="mt-3 space-y-3">
                                         {selectedTags.map((tag, index) => (
@@ -430,26 +428,24 @@ export function TrackingManager({ mode }: Props) {
                                 onClick={createFunnel}
                                 className="rounded-full bg-emerald-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
                             >
-                                Enregistrer le funnel
+                                {t('saveFunnel')}
                             </button>
                         </div>
                     )}
 
                     <div className="mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-50/90">
-                        {mode === 'tags'
-                            ? 'Après création, l’ID du tag reste figé et seule la note peut être modifiée.'
-                            : 'Après création, la liste ordonnée des tags reste figée et seule la note peut être modifiée.'}
+                        {mode === 'tags' ? t('noticeTag') : t('noticeFunnel')}
                     </div>
                 </article>
 
                 <article className="rounded-[2rem] border border-white/10 bg-white/5 p-6">
                     {mode === 'tags' ? (
                         <>
-                            <p className="text-sm uppercase tracking-[0.2em] text-white/45">Tags existants</p>
+                            <p className="text-sm uppercase tracking-[0.2em] text-white/45">{t('existingTags')}</p>
                             <div className="mt-5 space-y-3">
                                 {tags.length === 0 ? (
                                     <p className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-6 text-sm text-white/45">
-                                        Aucun tag trouvé pour cette application.
+                                        {t('noTags')}
                                     </p>
                                 ) : (
                                     tags.map((tag) => (
@@ -457,13 +453,13 @@ export function TrackingManager({ mode }: Props) {
                                             <div className="flex items-start justify-between gap-4">
                                                 <div>
                                                     <p className="font-mono text-xs text-cyan-200">{tag.tagId}</p>
-                                                    <p className="mt-1 text-xs text-white/45">ID métier autogénéré</p>
+                                                    <p className="mt-1 text-xs text-white/45">{t('tagIdAuto')}</p>
                                                 </div>
                                                 <button
                                                     onClick={() => deleteTag(tag.tagId)}
                                                     className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/70"
                                                 >
-                                                    Soft delete
+                                                    {t('softDelete')}
                                                 </button>
                                             </div>
                                             <div className="mt-4 flex gap-3">
@@ -478,7 +474,7 @@ export function TrackingManager({ mode }: Props) {
                                                     onClick={() => saveTagComment(tag.tagId)}
                                                     className="rounded-xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950"
                                                 >
-                                                    Sauver
+                                                    {t('save')}
                                                 </button>
                                             </div>
                                         </div>
@@ -488,11 +484,11 @@ export function TrackingManager({ mode }: Props) {
                         </>
                     ) : (
                         <>
-                            <p className="text-sm uppercase tracking-[0.2em] text-white/45">Funnels existants</p>
+                            <p className="text-sm uppercase tracking-[0.2em] text-white/45">{t('existingFunnels')}</p>
                             <div className="mt-5 space-y-3">
                                 {funnels.length === 0 ? (
                                     <p className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-6 text-sm text-white/45">
-                                        Aucun funnel trouvé pour cette application.
+                                        {t('noFunnels')}
                                     </p>
                                 ) : (
                                     funnels.map((funnel) => (
@@ -500,13 +496,13 @@ export function TrackingManager({ mode }: Props) {
                                             <div className="flex items-start justify-between gap-4">
                                                 <div>
                                                     <p className="font-mono text-xs text-emerald-200">{funnel.funnelId}</p>
-                                                    <p className="mt-1 text-xs text-white/45">{funnel.steps.length} étapes</p>
+                                                    <p className="mt-1 text-xs text-white/45">{t('funnelSteps', { count: funnel.steps.length })}</p>
                                                 </div>
                                                 <button
                                                     onClick={() => deleteFunnel(funnel.funnelId)}
                                                     className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/70"
                                                 >
-                                                    Soft delete
+                                                    {t('softDelete')}
                                                 </button>
                                             </div>
                                             <div className="mt-4 flex gap-3">
@@ -521,7 +517,7 @@ export function TrackingManager({ mode }: Props) {
                                                     onClick={() => saveFunnelComment(funnel.funnelId)}
                                                     className="rounded-xl bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950"
                                                 >
-                                                    Sauver
+                                                    {t('save')}
                                                 </button>
                                             </div>
                                             <div className="mt-4 flex flex-wrap gap-2">
@@ -543,7 +539,7 @@ export function TrackingManager({ mode }: Props) {
                             </div>
 
                             <div className="mt-8 rounded-2xl border border-white/10 bg-slate-950/70 p-4">
-                                <p className="text-sm font-medium text-white">Tags disponibles à ajouter</p>
+                                <p className="text-sm font-medium text-white">{t('availableTags')}</p>
                                 <div className="mt-3 flex flex-wrap gap-2">
                                     {availableTagIds.map((tagId) => (
                                         <button

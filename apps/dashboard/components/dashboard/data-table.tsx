@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import { Card } from '@/components/ui/card';
 import { DeltaBadge } from '@/components/ui/delta-badge';
 
@@ -15,17 +18,18 @@ type DataTableProps = {
 };
 
 export function DataTable({ data }: DataTableProps) {
+  const t = useTranslations('dashboard');
   return (
     <Card className="flex flex-col gap-4">
-      <h3 className="text-sm font-semibold text-text-primary">Top pages</h3>
+      <h3 className="text-sm font-semibold text-text-primary">{t('topPages')}</h3>
 
       <table className="w-full text-sm">
         <thead>
           <tr className="text-xs font-medium uppercase tracking-wider text-text-secondary">
-            <th className="pb-2 text-left font-medium">PAGE</th>
-            <th className="pb-2 text-right font-medium">VUES</th>
-            <th className="pb-2 text-right font-medium">ÉVOL.</th>
-            <th className="pb-2 text-right font-medium">DURÉE MOY.</th>
+            <th className="pb-2 text-left font-medium">{t('page')}</th>
+            <th className="pb-2 text-right font-medium">{t('views')}</th>
+            <th className="pb-2 text-right font-medium">{t('evolution')}</th>
+            <th className="pb-2 text-right font-medium">{t('avgTime')}</th>
           </tr>
         </thead>
         <tbody>

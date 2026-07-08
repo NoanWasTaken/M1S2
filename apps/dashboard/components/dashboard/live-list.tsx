@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import { Card } from '@/components/ui/card';
 
 type ActivePage = {
@@ -10,6 +13,7 @@ type LiveListProps = {
 };
 
 export function LiveList({ data }: LiveListProps) {
+  const t = useTranslations('dashboard');
   const maxVisitors = Math.max(...data.map((d) => d.visitors));
 
   return (
@@ -19,7 +23,7 @@ export function LiveList({ data }: LiveListProps) {
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
         </span>
-        <h3 className="text-sm font-semibold text-text-primary">Pages actives</h3>
+        <h3 className="text-sm font-semibold text-text-primary">{t('activePages')}</h3>
       </div>
 
       <div className="flex flex-col gap-3">

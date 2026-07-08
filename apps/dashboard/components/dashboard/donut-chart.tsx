@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Card } from '@/components/ui/card';
 
@@ -14,9 +15,10 @@ type DonutChartProps = {
 };
 
 export function DonutChart({ data }: DonutChartProps) {
+  const t = useTranslations('dashboard');
   return (
     <Card className="flex flex-col gap-4">
-      <h3 className="text-sm font-semibold text-text-primary">Sources de trafic</h3>
+      <h3 className="text-sm font-semibold text-text-primary">{t('trafficSources')}</h3>
 
       <div className="flex items-center gap-4">
         <div className="h-32 w-32 shrink-0">
