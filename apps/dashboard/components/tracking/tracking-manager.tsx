@@ -112,7 +112,7 @@ export function TrackingManager({ mode }: Props) {
                 setApplications(nextApplications);
                 setSelectedApplicationId(nextApplications[0]?._id || '');
                 setLoadingState(nextApplications[0]?._id ? '' : 'Aucune application disponible');
-            } catch (loadError) {
+            } catch {
                 if (cancelled) return;
                 setError('Impossible de charger les applications.');
                 setLoadingState('');

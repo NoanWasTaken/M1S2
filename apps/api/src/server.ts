@@ -9,7 +9,10 @@ import adminRouter from './modules/admin/admin.routes.js';
 import applicationRouter from './modules/applications/application.routes.js';
 import teamRouter from './modules/team/team.routes.js';
 import ingestionRouter from './modules/ingestion/ingestion.routes.js';
-import cookieParser from 'cookie-parser'; // for parse cookies
+
+import trackingRouter from './modules/tracking/tracking.routes.js';
+import dashboardRouter from './modules/dashboard/dashboard.routes.js';
+import cookieParser from 'cookie-parser';
 
 async function start() {
   await connectToDatabase(env.mongoUri);
@@ -34,7 +37,10 @@ async function start() {
   app.use('/api/v1/admin', adminRouter);
   app.use('/api/v1/applications', applicationRouter);
   app.use('/api/v1/team', teamRouter);
+  app.use('/api/v1/tracking', trackingRouter);
+  app.use('/api/v1/dashboard', dashboardRouter);
 
+  // ALWAYS AFTER the routes
   const ingestionCors = cors({
     origin: true,
     methods: ['POST', 'OPTIONS'],
@@ -46,6 +52,7 @@ async function start() {
   });
 
   app.use('/api/v1/ingestion', ingestionHelmet, ingestionCors, ingestionRouter);
+
   app.use(errorHandler);
 
   app.listen(env.port, () => {
