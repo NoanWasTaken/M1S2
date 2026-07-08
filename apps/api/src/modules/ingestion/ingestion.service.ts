@@ -10,6 +10,8 @@ export async function ingestBrowserEvents(appId: string, batch: IngestBatchInput
         type: e.type,
         url: e.url,
         occurredAt: e.occurredAt ? new Date(e.occurredAt) : now,
+        visitorId: e.visitorId,
+        sessionId: e.sessionId,
         source: 'browser' as const,
         payload: e.payload ?? {},
     }));

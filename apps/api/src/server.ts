@@ -16,8 +16,13 @@ async function start() {
 
   const app = express();
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
   app.use(cors({ origin: env.corsOrigin, credentials: true }));
+
   app.use(express.json());
   app.use(cookieParser());
 
@@ -27,12 +32,20 @@ async function start() {
 
   app.use('/api/v1/auth', authRouter);
   app.use('/api/v1/admin', adminRouter);
-
   app.use('/api/v1/applications', applicationRouter);
   app.use('/api/v1/team', teamRouter);
 
-  app.use('/api/v1/ingestion', ingestionRouter);
-  // ALWAYS AFTER the routes
+  const ingestionCors = cors({
+    origin: true,
+    methods: ['POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'x-app-id'],
+  });
+
+  const ingestionHelmet = helmet({
+    crossOriginResourcePolicy: false,
+  });
+
+  app.use('/api/v1/ingestion', ingestionHelmet, ingestionCors, ingestionRouter);
   app.use(errorHandler);
 
   app.listen(env.port, () => {
