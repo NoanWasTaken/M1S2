@@ -8,6 +8,8 @@ const navItems = [
   { href: '/dashboard', key: 'overview', icon: 'overview' },
   { href: '/pages', key: 'pages', icon: 'pages' },
   { href: '/events', key: 'events', icon: 'events' },
+  { href: '/tracking/tags', key: 'tags', icon: 'tags' },
+  { href: '/tracking/funnels', key: 'funnels', icon: 'funnels' },
   { href: '/settings', key: 'settings', icon: 'settings' },
 ];
 
@@ -25,6 +27,19 @@ const iconMap: Record<string, React.ReactNode> = {
   events: (
     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+    </svg>
+  ),
+  tags: (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7 7l0 0 10 10 4-4-10-10-4 4z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 4.5L19.5 13.5" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h0a1 1 0 011-1h0a1 1 0 011 1v0a1 1 0 01-1 1h0a1 1 0 01-1-1z" />
+    </svg>
+  ),
+  funnels: (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4h16l-6 7v5l-4 3V11L4 4z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 12h6" />
     </svg>
   ),
   settings: (
@@ -69,11 +84,10 @@ export function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                  isActive
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${isActive
                     ? 'bg-bg-active text-accent'
                     : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary'
-                }`}
+                  }`}
               >
                 {iconMap[item.icon]}
                 <span className="font-medium">{tNav(item.key)}</span>

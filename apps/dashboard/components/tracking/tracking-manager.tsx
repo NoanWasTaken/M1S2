@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api-client';
 import { useAuth } from '@/providers/auth-provider';
+import { Card } from '@/components/ui/card';
 
 type Company = {
     _id: string;
@@ -297,52 +298,105 @@ export function TrackingManager({ mode }: Props) {
         .map((tagId) => tags.find((tag) => tag.tagId === tagId))
         .filter(Boolean) as TrackingTag[];
 
-    return (
-        <div className="mx-auto max-w-7xl space-y-8 px-6 py-10 lg:px-12">
-            <header className="rounded-[2rem] border border-white/10 bg-white/5 p-8 backdrop-blur">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                    <div>
-                        <p className={`text-xs uppercase tracking-[0.3em] ${mode === 'tags' ? 'text-cyan-200/80' : 'text-emerald-200/80'}`}>
-                            {mode === 'tags' ? t('tagsTitle') : t('funnelsTitle')}
-                        </p>
-                        <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-                            {mode === 'tags' ? t('tagsHero') : t('funnelsHero')}
-                        </h1>
-                        <p className="mt-4 max-w-3xl text-sm leading-7 text-white/70 sm:text-base">
-                            {mode === 'tags' ? t('tagsDescription') : t('funnelsDescription')}
-                        </p>
-                    </div>
+    function getTagComment(tagId: string) {
+        return tags.find((tag) => tag.tagId === tagId)?.comment ?? tagId;
+    }
 
-                    <div className="flex flex-wrap gap-3 text-sm text-white/70">
-                        <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2">
-                            {user.role === 'admin' ? t('modeAdmin') : t('modeWebmaster')}
+    const primaryCount = mode === 'tags' ? tags.length : funnels.length;
+    const secondaryCount = mode === 'tags' ? funnels.length : tags.length;
+    const tertiaryCount = mode === 'tags' ? availableTagIds.length : selectedTags.length;
+
+    return (
+        <div className="flex flex-col gap-4 p-6">
+            <div className="flex items-center justify-between border-b border-border-subtle bg-[var(--bg-page)] px-6 py-4">
+                <div className="flex items-center gap-2">
+                    <h1 className="text-xl font-semibold text-text-primary">
+                        {mode === 'tags' ? t('tagsTitle') : t('funnelsTitle')}
+                    </h1>
+                    <span className="text-xl text-text-tertiary">/</span>
+                    <span className="text-sm text-text-secondary">
+                        {t('appActive')}: {selectedApplication?.name ?? '—'}
+                    </span>
+                </div>
+
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 rounded-lg border border-border-subtle bg-bg-card/50 px-3 py-1.5">
+                        <span className="relative flex h-2 w-2">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
+                            <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
                         </span>
-                        {selectedApplication ? (
-                            <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2">
-                                {t('appActive')}: {selectedApplication.name}
-                            </span>
-                        ) : null}
+                        <span className="font-mono text-sm font-bold text-accent">{primaryCount}</span>
+                        <span className="text-xs text-text-secondary">
+                            {mode === 'tags' ? t('existingTags') : t('existingFunnels')}
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-lg border border-border-subtle bg-bg-card/50 px-3 py-1.5">
+                        <span className="font-mono text-sm font-bold text-accent-secondary">{secondaryCount}</span>
+                        <span className="text-xs text-text-secondary">
+                            {mode === 'tags' ? t('existingFunnels') : t('existingTags')}
+                        </span>
                     </div>
                 </div>
-            </header>
+            </div>
 
             {error ? (
-                <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
+                <Card className="border-danger/20 bg-danger/10 text-danger">
                     {error}
-                </div>
+                </Card>
             ) : null}
 
-            <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-                <article className="rounded-[2rem] border border-white/10 bg-slate-950/90 p-6">
-                    <p className="text-sm uppercase tracking-[0.2em] text-white/45">{t('context')}</p>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <Card>
+                    <div className="text-xs font-medium uppercase tracking-widest text-text-secondary">
+                        {mode === 'tags' ? t('existingTags') : t('existingFunnels')}
+                    </div>
+                    <div className="mt-2 flex items-baseline gap-2">
+                        <span className="font-mono text-2xl font-bold text-text-primary">{primaryCount}</span>
+                    </div>
+                    <p className="mt-2 text-xs text-text-secondary">
+                        {mode === 'tags' ? t('tagIdAuto') : t('funnelSteps', { count: primaryCount })}
+                    </p>
+                </Card>
+
+                <Card>
+                    <div className="text-xs font-medium uppercase tracking-widest text-text-secondary">
+                        {mode === 'tags' ? t('existingFunnels') : t('existingTags')}
+                    </div>
+                    <div className="mt-2 flex items-baseline gap-2">
+                        <span className="font-mono text-2xl font-bold text-text-primary">{secondaryCount}</span>
+                    </div>
+                    <p className="mt-2 text-xs text-text-secondary">
+                        {mode === 'tags' ? t('funnelSteps', { count: funnels.length }) : t('tagIdAuto')}
+                    </p>
+                </Card>
+
+                <Card>
+                    <div className="text-xs font-medium uppercase tracking-widest text-text-secondary">
+                        {mode === 'tags' ? t('availableTags') : t('selectedSteps')}
+                    </div>
+                    <div className="mt-2 flex items-baseline gap-2">
+                        <span className="font-mono text-2xl font-bold text-text-primary">{tertiaryCount}</span>
+                    </div>
+                    <p className="mt-2 text-xs text-text-secondary">
+                        {mode === 'tags' ? t('context') : t('addTagsHint')}
+                    </p>
+                </Card>
+            </div>
+
+            <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
+                <Card className="space-y-5">
+                    <div>
+                        <p className="text-xs font-medium uppercase tracking-widest text-text-secondary">{t('context')}</p>
+                        {loadingState ? <p className="mt-3 text-sm text-text-secondary">{loadingState}</p> : null}
+                    </div>
 
                     {user.role === 'admin' ? (
-                        <label className="mt-5 block space-y-2 text-sm">
-                            <span className="text-white/65">{t('company')}</span>
+                        <label className="block space-y-2 text-sm">
+                            <span className="text-text-secondary">{t('company')}</span>
                             <select
                                 value={selectedCompanyId}
                                 onChange={(event) => setSelectedCompanyId(event.target.value)}
-                                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-cyan-400/60"
+                                className="w-full rounded-xl border border-border-subtle bg-bg-card px-4 py-3 text-text-primary outline-none"
                             >
                                 {companies.map((company) => (
                                     <option key={company._id} value={company._id} className="bg-slate-950">
@@ -353,12 +407,12 @@ export function TrackingManager({ mode }: Props) {
                         </label>
                     ) : null}
 
-                    <label className="mt-5 block space-y-2 text-sm">
-                        <span className="text-white/65">{t('application')}</span>
+                    <label className="block space-y-2 text-sm">
+                        <span className="text-text-secondary">{t('application')}</span>
                         <select
                             value={selectedApplicationId}
                             onChange={(event) => setSelectedApplicationId(event.target.value)}
-                            className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-cyan-400/60"
+                            className="w-full rounded-xl border border-border-subtle bg-bg-card px-4 py-3 text-text-primary outline-none"
                         >
                             {applications.map((application) => (
                                 <option key={application._id} value={application._id} className="bg-slate-950">
@@ -368,194 +422,197 @@ export function TrackingManager({ mode }: Props) {
                         </select>
                     </label>
 
-                    {loadingState ? <p className="mt-4 text-sm text-white/45">{loadingState}</p> : null}
-
                     {mode === 'tags' ? (
-                        <div className="mt-8 space-y-4">
-                            <p className="text-sm uppercase tracking-[0.2em] text-white/45">{t('createTag')}</p>
+                        <div className="space-y-4">
+                            <div className="text-xs font-medium uppercase tracking-widest text-text-secondary">{t('createTag')}</div>
                             <label className="block space-y-2 text-sm">
-                                <span className="text-white/65">{t('comment')}</span>
+                                <span className="text-text-secondary">{t('comment')}</span>
                                 <input
                                     value={tagComment}
                                     onChange={(event) => setTagComment(event.target.value)}
                                     placeholder={t('tagPlaceholder')}
-                                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition placeholder:text-white/25 focus:border-cyan-400/60"
+                                    className="w-full rounded-xl border border-border-subtle bg-bg-card px-4 py-3 text-text-primary outline-none placeholder:text-text-secondary"
                                 />
                             </label>
                             <button
                                 onClick={createTag}
-                                className="rounded-full bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+                                className="rounded-lg border border-accent bg-accent px-4 py-2.5 text-sm font-medium text-[#05070d]"
                             >
                                 {t('generateTag')}
                             </button>
                         </div>
                     ) : (
-                        <div className="mt-8 space-y-4">
-                            <p className="text-sm uppercase tracking-[0.2em] text-white/45">{t('createFunnel')}</p>
+                        <div className="space-y-4">
+                            <div className="text-xs font-medium uppercase tracking-widest text-text-secondary">{t('createFunnel')}</div>
                             <label className="block space-y-2 text-sm">
-                                <span className="text-white/65">{t('comment')}</span>
+                                <span className="text-text-secondary">{t('comment')}</span>
                                 <input
                                     value={funnelComment}
                                     onChange={(event) => setFunnelComment(event.target.value)}
                                     placeholder={t('funnelPlaceholder')}
-                                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition placeholder:text-white/25 focus:border-emerald-400/60"
+                                    className="w-full rounded-xl border border-border-subtle bg-bg-card px-4 py-3 text-text-primary outline-none placeholder:text-text-secondary"
                                 />
                             </label>
-                            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                                <p className="text-sm font-medium text-white">{t('selectedSteps')}</p>
+                            <Card className="space-y-3">
+                                <p className="text-sm font-semibold text-text-primary">{t('selectedSteps')}</p>
                                 {selectedTags.length === 0 ? (
-                                    <p className="mt-2 text-sm text-white/45">{t('addTagsHint')}</p>
+                                    <p className="text-sm text-text-secondary">{t('addTagsHint')}</p>
                                 ) : (
-                                    <div className="mt-3 space-y-3">
+                                    <div className="space-y-2">
                                         {selectedTags.map((tag, index) => (
-                                            <div key={tag.tagId} className="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2">
-                                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-400/15 text-xs font-semibold text-emerald-200">{index + 1}</span>
+                                            <div key={tag.tagId} className="flex items-center gap-3 rounded-xl border border-border-subtle bg-bg-card px-3 py-2">
+                                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/15 text-xs font-semibold text-accent">
+                                                    {index + 1}
+                                                </span>
                                                 <div className="min-w-0 flex-1">
-                                                    <p className="truncate text-sm text-white">{tag.comment}</p>
-                                                    <p className="font-mono text-[11px] text-white/45">{tag.tagId}</p>
+                                                    <p className="truncate text-sm text-text-primary">{tag.comment}</p>
+                                                    <p className="text-[11px] text-text-secondary">{t('selectedSteps')}</p>
                                                 </div>
                                                 <div className="flex gap-1">
-                                                    <button onClick={() => moveSelectedTag(index, -1)} className="rounded-lg border border-white/10 px-2 py-1 text-xs text-white/70">↑</button>
-                                                    <button onClick={() => moveSelectedTag(index, 1)} className="rounded-lg border border-white/10 px-2 py-1 text-xs text-white/70">↓</button>
-                                                    <button onClick={() => removeSelectedTag(tag.tagId)} className="rounded-lg border border-white/10 px-2 py-1 text-xs text-white/70">×</button>
+                                                    <button onClick={() => moveSelectedTag(index, -1)} className="rounded-lg border border-border-subtle px-2 py-1 text-xs text-text-secondary">↑</button>
+                                                    <button onClick={() => moveSelectedTag(index, 1)} className="rounded-lg border border-border-subtle px-2 py-1 text-xs text-text-secondary">↓</button>
+                                                    <button onClick={() => removeSelectedTag(tag.tagId)} className="rounded-lg border border-border-subtle px-2 py-1 text-xs text-text-secondary">×</button>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                 )}
-                            </div>
+                            </Card>
                             <button
                                 onClick={createFunnel}
-                                className="rounded-full bg-emerald-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
+                                className="rounded-lg border border-accent-secondary bg-accent-secondary px-4 py-2.5 text-sm font-medium text-[#05070d]"
                             >
                                 {t('saveFunnel')}
                             </button>
                         </div>
                     )}
 
-                    <div className="mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-50/90">
+                    <Card className="border-amber-400/20 bg-amber-400/10 text-amber-50">
                         {mode === 'tags' ? t('noticeTag') : t('noticeFunnel')}
-                    </div>
-                </article>
+                    </Card>
+                </Card>
 
-                <article className="rounded-[2rem] border border-white/10 bg-white/5 p-6">
-                    {mode === 'tags' ? (
-                        <>
-                            <p className="text-sm uppercase tracking-[0.2em] text-white/45">{t('existingTags')}</p>
-                            <div className="mt-5 space-y-3">
+                <div className="space-y-6">
+                    <Card className="space-y-4">
+                        <p className="text-xs font-medium uppercase tracking-widest text-text-secondary">
+                            {mode === 'tags' ? t('existingTags') : t('existingFunnels')}
+                        </p>
+
+                        {mode === 'tags' ? (
+                            <div className="space-y-3">
                                 {tags.length === 0 ? (
-                                    <p className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-6 text-sm text-white/45">
+                                    <p className="rounded-xl border border-border-subtle bg-bg-card p-4 text-sm text-text-secondary">
                                         {t('noTags')}
                                     </p>
                                 ) : (
                                     tags.map((tag) => (
-                                        <div key={tag.tagId} className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+                                        <Card key={tag.tagId} className="space-y-4">
                                             <div className="flex items-start justify-between gap-4">
                                                 <div>
-                                                    <p className="font-mono text-xs text-cyan-200">{tag.tagId}</p>
-                                                    <p className="mt-1 text-xs text-white/45">{t('tagIdAuto')}</p>
+                                                    <p className="text-sm font-semibold text-text-primary">{tag.comment}</p>
+                                                    <p className="mt-1 text-xs text-text-secondary font-mono">{tag.tagId}</p>
                                                 </div>
                                                 <button
                                                     onClick={() => deleteTag(tag.tagId)}
-                                                    className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/70"
+                                                    className="rounded-lg border border-border-subtle px-3 py-1 text-xs text-text-secondary"
                                                 >
                                                     {t('softDelete')}
                                                 </button>
                                             </div>
-                                            <div className="mt-4 flex gap-3">
+                                            <div className="flex gap-3">
                                                 <input
                                                     value={tagDrafts[tag.tagId] ?? ''}
                                                     onChange={(event) =>
                                                         setTagDrafts((current) => ({ ...current, [tag.tagId]: event.target.value }))
                                                     }
-                                                    className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none"
+                                                    className="min-w-0 flex-1 rounded-xl border border-border-subtle bg-bg-card px-3 py-2 text-sm text-text-primary outline-none"
                                                 />
                                                 <button
                                                     onClick={() => saveTagComment(tag.tagId)}
-                                                    className="rounded-xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950"
+                                                    className="rounded-lg border border-accent bg-accent px-4 py-2 text-sm font-medium text-[#05070d]"
                                                 >
                                                     {t('save')}
                                                 </button>
                                             </div>
-                                        </div>
+                                        </Card>
                                     ))
                                 )}
                             </div>
-                        </>
-                    ) : (
-                        <>
-                            <p className="text-sm uppercase tracking-[0.2em] text-white/45">{t('existingFunnels')}</p>
-                            <div className="mt-5 space-y-3">
+                        ) : (
+                            <div className="space-y-3">
                                 {funnels.length === 0 ? (
-                                    <p className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-6 text-sm text-white/45">
+                                    <p className="rounded-xl border border-border-subtle bg-bg-card p-4 text-sm text-text-secondary">
                                         {t('noFunnels')}
                                     </p>
                                 ) : (
                                     funnels.map((funnel) => (
-                                        <div key={funnel.funnelId} className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+                                        <Card key={funnel.funnelId} className="space-y-4">
                                             <div className="flex items-start justify-between gap-4">
                                                 <div>
-                                                    <p className="font-mono text-xs text-emerald-200">{funnel.funnelId}</p>
-                                                    <p className="mt-1 text-xs text-white/45">{t('funnelSteps', { count: funnel.steps.length })}</p>
+                                                    <p className="text-sm font-semibold text-text-primary">{funnel.comment}</p>
+                                                    <p className="mt-1 text-xs text-text-secondary font-mono">{funnel.funnelId}</p>
+                                                    <p className="mt-1 text-xs text-text-secondary">{t('funnelSteps', { count: funnel.steps.length })}</p>
                                                 </div>
                                                 <button
                                                     onClick={() => deleteFunnel(funnel.funnelId)}
-                                                    className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/70"
+                                                    className="rounded-lg border border-border-subtle px-3 py-1 text-xs text-text-secondary"
                                                 >
                                                     {t('softDelete')}
                                                 </button>
                                             </div>
-                                            <div className="mt-4 flex gap-3">
+                                            <div className="flex gap-3">
                                                 <input
                                                     value={funnelDrafts[funnel.funnelId] ?? ''}
                                                     onChange={(event) =>
                                                         setFunnelDrafts((current) => ({ ...current, [funnel.funnelId]: event.target.value }))
                                                     }
-                                                    className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none"
+                                                    className="min-w-0 flex-1 rounded-xl border border-border-subtle bg-bg-card px-3 py-2 text-sm text-text-primary outline-none"
                                                 />
                                                 <button
                                                     onClick={() => saveFunnelComment(funnel.funnelId)}
-                                                    className="rounded-xl bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950"
+                                                    className="rounded-lg border border-accent-secondary bg-accent-secondary px-4 py-2 text-sm font-medium text-[#05070d]"
                                                 >
                                                     {t('save')}
                                                 </button>
                                             </div>
-                                            <div className="mt-4 flex flex-wrap gap-2">
+                                            <div className="flex flex-wrap gap-2">
                                                 {funnel.steps
                                                     .slice()
                                                     .sort((a, b) => a.position - b.position)
                                                     .map((step) => (
                                                         <span
                                                             key={`${funnel.funnelId}-${step.position}`}
-                                                            className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70"
+                                                            className="rounded-full border border-border-subtle bg-bg-card px-3 py-1 text-xs text-text-secondary"
                                                         >
-                                                            {step.position}. {step.tagId}
+                                                            {step.position}. {getTagComment(step.tagId)}
                                                         </span>
                                                     ))}
                                             </div>
-                                        </div>
+                                        </Card>
                                     ))
                                 )}
                             </div>
+                        )}
+                    </Card>
 
-                            <div className="mt-8 rounded-2xl border border-white/10 bg-slate-950/70 p-4">
-                                <p className="text-sm font-medium text-white">{t('availableTags')}</p>
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                    {availableTagIds.map((tagId) => (
-                                        <button
-                                            key={tagId}
-                                            onClick={() => addTagToFunnel(tagId)}
-                                            className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70"
-                                        >
-                                            + {tagId}
-                                        </button>
-                                    ))}
-                                </div>
+                    {mode === 'funnels' ? (
+                        <Card className="space-y-3">
+                            <p className="text-sm font-semibold text-text-primary">{t('availableTags')}</p>
+                            <div className="flex flex-wrap gap-2">
+                                {availableTagIds.map((tagId) => (
+                                    <button
+                                        key={tagId}
+                                        onClick={() => addTagToFunnel(tagId)}
+                                        className="rounded-full border border-border-subtle bg-bg-card px-3 py-1 text-xs text-text-secondary"
+                                    >
+                                        + {getTagComment(tagId)}
+                                    </button>
+                                ))}
                             </div>
-                        </>
-                    )}
-                </article>
-            </section>
+                        </Card>
+                    ) : null}
+                </div>
+            </div>
         </div>
     );
 }
