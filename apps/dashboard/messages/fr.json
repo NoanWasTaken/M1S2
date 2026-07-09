@@ -60,6 +60,8 @@
     "overview": "Vue d'ensemble",
     "pages": "Pages",
     "events": "Événements",
+    "tags": "Tracking tags",
+    "funnels": "Conversion funnels",
     "settings": "Paramètres",
     "liveActive": "Temps réel actif"
   },
