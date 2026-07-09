@@ -33,7 +33,7 @@ export default function LoginPage() {
       const message =
         err && typeof err === 'object' && 'response' in err
           ? (err as { response: { data: { message?: string } } }).response?.data
-              ?.message
+            ?.message
           : t('error');
       setApiError(message || t('error'));
     }
@@ -85,6 +85,12 @@ export default function LoginPage() {
             type="password"
             placeholder={t('passwordPlaceholder')}
           />
+
+          <div className="flex justify-end">
+            <Link href="/forgot-password" className="text-sm text-accent hover:underline">
+              {t('forgotPassword')}
+            </Link>
+          </div>
 
           <Button
             type="submit"

@@ -8,7 +8,13 @@
     "back": "Retour",
     "help": "Aide",
     "edit": "Modifier",
-    "done": "Terminer"
+    "done": "Terminer",
+    "forgotPassword": "Mot de passe oublié",
+    "sendLink": "Envoyer le lien",
+    "enterEmail": "Entrez votre email, nous vous enverrons un lien de réinitialisation.",
+    "emailSent": "Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.",
+    "backToLogin": "Retour à la connexion",
+    "invalidEmail": "Email invalide"
   },
   "auth": {
     "login": {
@@ -17,11 +23,13 @@
       "emailPlaceholder": "vous@exemple.fr",
       "password": "Mot de passe",
       "passwordPlaceholder": "••••••••",
+      "forgotPassword": "Mot de passe oublié ?",
       "submit": "Se connecter",
       "noAccount": "Pas encore de compte ?",
       "createAccount": "Créer un compte",
       "error": "Email ou mot de passe incorrect",
-      "accountPending": "Votre compte est en attente de validation"
+      "accountPending": "Votre compte est en attente de validation",
+      "invalidEmail": "Email invalide"
     },
     "register": {
       "title": "Créer un compte",
@@ -47,13 +55,24 @@
       "password": "Mot de passe",
       "passwordPlaceholder": "8 caractères minimum",
       "confirmPassword": "Confirmer le mot de passe",
-      "confirmPasswordPlaceholder": "Répétez le mot de passe"
+      "confirmPasswordPlaceholder": "Répétez le mot de passe",
+      "invalidEmail": "Email invalide"
     },
     "pendingValidation": {
       "title": "Compte créé avec succès",
       "message": "Votre inscription a bien été reçue. Un administrateur va valider votre compte sous 48h.",
       "submessage": "Vous recevrez un email de confirmation dès que votre compte sera activé.",
       "backToLogin": "Retour à la connexion"
+    },
+    "resetPassword": {
+      "resetPassword": "Réinitialiser le mot de passe",
+      "passwordTooShort": "8 caractères minimum",
+      "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+      "invalidToken": "Lien invalide ou expiré",
+      "requestNewLink": "Demander un nouveau lien",
+      "passwordReset": "Mot de passe réinitialisé avec succès",
+      "newPassword": "Nouveau mot de passe",
+      "confirmPassword": "Confirmer le mot de passe"
     }
   },
   "nav": {
@@ -63,7 +82,8 @@
     "tags": "Tracking tags",
     "funnels": "Conversion funnels",
     "settings": "Paramètres",
-    "liveActive": "Temps réel actif"
+    "liveActive": "Temps réel actif",
+    "logout": "Déconnexion"
   },
   "tracking": {
     "tagsTitle": "Tracking tags",

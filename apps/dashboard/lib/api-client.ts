@@ -17,6 +17,16 @@ export function setOnUnauthorized(callback: () => void) {
   onUnauthorized = callback;
 }
 
+export async function refreshAccessToken(): Promise<string> {
+  const { data } = await axios.post(
+    `${BASE_URL}/api/v1/auth/refresh`,
+    {},
+    { withCredentials: true },
+  );
+  accessToken = data.accessToken;
+  return data.accessToken;
+}
+
 export const api = axios.create({
   baseURL: BASE_URL,
   withCredentials: true,

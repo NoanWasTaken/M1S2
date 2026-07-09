@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { api, setAccessToken, setOnUnauthorized } from '@/lib/api-client';
+import { api, setAccessToken, setOnUnauthorized, refreshAccessToken } from '@/lib/api-client';
 
 type AuthUser = {
   id: string;
@@ -51,8 +51,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function tryRestoreSession() {
       try {
-        const { data } = await api.post('/api/v1/auth/refresh');
-        setAccessToken(data.accessToken);
+        const token = await refreshAccessToken();
+        setAccessToken(token);
         const meRes = await api.get('/api/v1/auth/me');
         setUser({
           id: meRes.data.user.sub,
