@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@m1s2/shared": ["../../packages/shared/src"]
     }
   },
   "include": [

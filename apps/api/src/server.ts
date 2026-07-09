@@ -9,16 +9,30 @@ import { errorHandler } from './middlewares/error-handler.js';
 import adminRouter from './modules/admin/admin.routes.js';
 import applicationRouter from './modules/applications/application.routes.js';
 import teamRouter from './modules/team/team.routes.js';
-import cookieParser from 'cookie-parser';
+import ingestionRouter from './modules/ingestion/ingestion.routes.js';
+
+import trackingRouter from './modules/tracking/tracking.routes.js';
+import dashboardRouter from './modules/dashboard/dashboard.routes.js';
+import widgetRouter from './modules/dashboard/widget.routes.js';
+
 import { initGateway } from './realtime/gateway.js';
+
+import analyticsRouter from './modules/analytics/analytics.routes.js';
+
+import cookieParser from 'cookie-parser';
 
 async function start() {
   await connectToDatabase(env.mongoUri);
 
   const app = express();
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
   app.use(cors({ origin: env.corsOrigin, credentials: true }));
+
   app.use(express.json());
   app.use(cookieParser());
 
@@ -28,10 +42,29 @@ async function start() {
 
   app.use('/api/v1/auth', authRouter);
   app.use('/api/v1/admin', adminRouter);
+  
   app.use('/api/v1/applications', applicationRouter);
   app.use('/api/v1/team', teamRouter);
+  app.use('/api/v1/tracking', trackingRouter);
+
+  app.use('/api/v1/dashboard', dashboardRouter);
+  app.use('/api/v1/dashboard', widgetRouter);
+
+  app.use('/api/v1/analytics', analyticsRouter);
 
   // ALWAYS AFTER the routes
+  const ingestionCors = cors({
+    origin: true,
+    methods: ['POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'x-app-id'],
+  });
+
+  const ingestionHelmet = helmet({
+    crossOriginResourcePolicy: false,
+  });
+
+  app.use('/api/v1/ingestion', ingestionHelmet, ingestionCors, ingestionRouter);
+
   app.use(errorHandler);
 
   // Wrap Express in a raw HTTP server so Socket.IO can share the same port

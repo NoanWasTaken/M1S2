@@ -27,3 +27,7 @@ export const loginSchema = z.object({
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
+
+export const refreshSchema = z.object({});
+
+export type RefreshInput = z.infer<typeof refreshSchema>;
