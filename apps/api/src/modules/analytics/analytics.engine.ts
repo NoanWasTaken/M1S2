@@ -1,5 +1,5 @@
 import type { PipelineStage } from 'mongoose';
-import type { AnalyticsQueryInput, FilterInput } from './analytics.schema.js';
+import type { AnalyticsQueryInput } from './analytics.schema.js';
 
 // Build the $match stage from the config
 function buildMatchStage(appId: string, query: AnalyticsQueryInput): PipelineStage.Match {
