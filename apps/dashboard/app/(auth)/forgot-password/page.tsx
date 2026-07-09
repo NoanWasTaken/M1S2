@@ -28,12 +28,10 @@ export default function ForgotPasswordPage() {
     });
 
     const onSubmit = form.handleSubmit(async (data) => {
-        try {
-            await api.post('/api/v1/auth/forgot-password', { email: data.email, locale });
-        } catch {
-        } finally {
-            setSent(true);
-        }
+        await api
+            .post('/api/v1/auth/forgot-password', { email: data.email, locale })
+            .catch(() => undefined);
+        setSent(true);
     });
 
     return (
