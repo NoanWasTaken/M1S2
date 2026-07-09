@@ -26,6 +26,16 @@ export const loginSchema = z.object({
     password: z.string().min(1),
 });
 
+export const forgotPasswordSchema = z.object({
+    email: z.string().email(),
+    locale: z.enum(['fr', 'en']).optional(),
+});
+
+export const resetPasswordSchema = z.object({
+    token: z.string().min(1),
+    password: z.string().min(8, 'Le mot de passe doit faire au moins 8 caractères.'),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 
 export const refreshSchema = z.object({});

@@ -20,6 +20,8 @@ const userSchema = new Schema(
             enum: ['owner', 'member'],
             default: null,
         },
+        resetTokenHash: { type: String, default: null },
+        resetTokenExpiresAt: { type: Date, default: null },
     },
     { timestamps: true },
 );

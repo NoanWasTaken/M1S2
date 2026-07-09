@@ -5,20 +5,20 @@ import { AppError } from '../../utils/app-error.js';
 import { sendConfirmationEmail } from '../../utils/email.js';
 import type { RegisterInput, LoginInput } from './auth.schema.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken, type TokenPayload } from './jwt.js';
+import crypto from 'crypto';
+import { env } from '../../config/env.js';
+import { sendPasswordResetEmail } from '../../utils/email.js';
 
 export async function registerWebmaster(input: RegisterInput) {
     const email = input.user.email.toLowerCase();
 
-    // 1. is the email already taken?
     const existing = await UserModel.findOne({ email });
     if (existing) {
         throw new AppError(409, 'email_already_used', 'An account already exists with this email.');
     }
 
-    // 2. Hash the password (never stored in clear text)
     const passwordHash = await argon2.hash(input.user.password);
 
-    // 3. Create the company (status "pending" by default)
     const company = await CompanyModel.create({
         name: input.company.name,
         baseUrl: input.company.baseUrl,
@@ -26,7 +26,6 @@ export async function registerWebmaster(input: RegisterInput) {
         contact: input.company.contact,
     });
 
-    // 4. Create the webmaster user, attached to the company
     const user = await UserModel.create({
         email,
         passwordHash,
@@ -36,10 +35,8 @@ export async function registerWebmaster(input: RegisterInput) {
         teamRole: 'owner',
     });
 
-    // 5. Send the confirmation email (placeholder)
     await sendConfirmationEmail(email);
 
-    // 6. Return the result WITHOUT the password
     return {
         user: { id: user._id, email: user.email, role: user.role, status: user.status },
         company: { id: company._id, name: company.name, validationStatus: company.validationStatus },
@@ -49,21 +46,17 @@ export async function registerWebmaster(input: RegisterInput) {
 export async function loginUser(input: LoginInput) {
     const email = input.email.toLowerCase();
 
-    // 1. access the user
     const user = await UserModel.findOne({ email });
 
-    // 2. check the password (same error if user absent OR password is incorrect)
     const passwordOk = user ? await argon2.verify(user.passwordHash, input.password) : false;
     if (!user || !passwordOk) {
         throw new AppError(401, 'invalid_credentials', 'Invalid credentials.');
     }
 
-    // 3. block if the account is not yet validated
     if (user.status === 'pending') {
         throw new AppError(403, 'account_pending', "Your account is pending validation.");
     }
 
-    // 4. build the token payload
     const payload = {
         sub: user._id.toString(),
         role: user.role,
@@ -71,7 +64,6 @@ export async function loginUser(input: LoginInput) {
         teamRole: user.teamRole,
     };
 
-    // 5. generate the two tokens
     const accessToken = signAccessToken(payload);
     const refreshToken = signRefreshToken(payload);
 
@@ -106,5 +98,44 @@ export async function refreshUserSession(refreshToken: string) {
 }
 
 export async function logoutUser() {
-    return { message: 'Déconnecté' };
+    return { message: 'Logged out' };
+}
+
+const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+export async function resetPassword(rawToken: string, newPassword: string): Promise<void> {
+    const candidates = await UserModel.find({
+        resetTokenHash: { $ne: null },
+        resetTokenExpiresAt: { $gt: new Date() },
+    });
+
+    let matched = null;
+    for (const user of candidates) {
+        if (user.resetTokenHash && (await argon2.verify(user.resetTokenHash, rawToken))) {
+            matched = user;
+            break;
+        }
+    }
+
+    if (!matched) {
+        throw new AppError(400, 'invalid_or_expired_token', 'Invalid or expired token.');
+    }
+
+    matched.passwordHash = await argon2.hash(newPassword);
+    matched.resetTokenHash = null;
+    matched.resetTokenExpiresAt = null;
+    await matched.save();
+}
+
+export async function requestPasswordReset(email: string, locale: 'fr' | 'en' = 'fr'): Promise<void> {
+    const user = await UserModel.findOne({ email: email.toLowerCase() });
+    if (!user) return;
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    user.resetTokenHash = await argon2.hash(rawToken);
+    user.resetTokenExpiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+    await user.save();
+
+    const resetUrl = `${env.appWebUrl}/reset-password?token=${rawToken}`;
+    await sendPasswordResetEmail(user.email, resetUrl, locale);
 }

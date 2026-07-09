@@ -8,7 +8,13 @@
     "back": "Back",
     "help": "Help",
     "edit": "Edit",
-    "done": "Done"
+    "done": "Done",
+    "forgotPassword": "Forgot password",
+    "sendLink": "Send link",
+    "enterEmail": "Enter your email, we will send you a reset link.",
+    "emailSent": "If an account exists with this email, a reset link has been sent.",
+    "backToLogin": "Back to login",
+    "invalidEmail": "Invalid email"
   },
   "auth": {
     "login": {
@@ -17,11 +23,13 @@
       "emailPlaceholder": "you@example.com",
       "password": "Password",
       "passwordPlaceholder": "••••••••",
+      "forgotPassword": "Forgot password?",
       "submit": "Sign in",
       "noAccount": "Don't have an account?",
       "createAccount": "Create an account",
       "error": "Invalid email or password",
-      "accountPending": "Your account is pending validation"
+      "accountPending": "Your account is pending validation",
+      "invalidEmail": "Invalid email"
     },
     "register": {
       "title": "Create an account",
@@ -54,6 +62,16 @@
       "message": "Your registration has been received. An administrator will validate your account within 48 hours.",
       "submessage": "You will receive a confirmation email once your account is activated.",
       "backToLogin": "Back to login"
+    },
+    "resetPassword": {
+      "resetPassword": "Reset password",
+      "passwordTooShort": "8 characters minimum",
+      "passwordsDoNotMatch": "Passwords do not match",
+      "invalidToken": "Invalid or expired link",
+      "requestNewLink": "Request a new link",
+      "passwordReset": "Password reset successfully",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm password"
     }
   },
   "nav": {
@@ -61,7 +79,8 @@
     "pages": "Pages",
     "events": "Events",
     "settings": "Settings",
-    "liveActive": "Live active"
+    "liveActive": "Live active",
+    "logout": "Logout"
   },
   "tracking": {
     "tagsTitle": "Tracking tags",

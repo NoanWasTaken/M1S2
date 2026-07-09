@@ -1,9 +1,10 @@
 ﻿import { Server as HTTPServer } from "http";
 import { Server as SocketServer } from "socket.io";
-import jwt from "jsonwebtoken";
 import { env } from "../config/env.js";
 import { Rooms } from "./room.js";
 import { ConnectionStateMachine } from "./state-manager.js";
+import { verifyAccessToken } from "../modules/auth/jwt.js";
+
 import type {
   ServerToClientEvents,
   ClientToServerEvents,
@@ -11,7 +12,8 @@ import type {
   SocketData,
 } from "./message-types.js";
 
-export type AppSocketServer = SocketServer< ClientToServerEvents,
+export type AppSocketServer = SocketServer<
+  ClientToServerEvents,
   ServerToClientEvents,
   InterServerEvents,
   SocketData
@@ -59,28 +61,29 @@ export async function initGateway(httpServer: HTTPServer): Promise<AppSocketServ
         );
       }
 
-      const payload = jwt.verify(token, env.jwtAccessSecret) as {
-        sub: string;
-        accountId: string;
-        role: "admin" | "webmaster" | "visitor";
-      };
+      // Same verifier as the rest of the app (same secret, same payload shape).
+      const payload = verifyAccessToken(token); // { sub, role, companyId, ... }
+
+      // The gateway isolates flows by company: companyId IS the accountId.
+      if (!payload.companyId) {
+        return next(
+          Object.assign(new Error("NO_COMPANY"), { code: "UNAUTHORIZED" })
+        );
+      }
 
       socket.data.userId = payload.sub;
-      socket.data.accountId = payload.accountId;
+      socket.data.accountId = payload.companyId;
       socket.data.role = payload.role;
       socket.data.sessionId = socket.id;
       socket.data.connectionState = "connecting";
 
       return next();
     } catch (err) {
-      if (err instanceof jwt.TokenExpiredError) {
-        return next(
-          Object.assign(new Error("TOKEN_EXPIRED"), { code: "TOKEN_EXPIRED" })
-        );
-      }
-      return next(
-        Object.assign(new Error("UNAUTHORIZED"), { code: "UNAUTHORIZED" })
-      );
+      const code =
+        err instanceof Error && err.name === "TokenExpiredError"
+          ? "TOKEN_EXPIRED"
+          : "UNAUTHORIZED";
+      return next(Object.assign(new Error(code), { code }));
     }
   });
 

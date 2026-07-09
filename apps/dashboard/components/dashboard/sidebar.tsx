@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useAuth } from '@/providers/auth-provider';
 
 const navItems = [
   { href: '/dashboard', key: 'overview', icon: 'overview' },
@@ -39,6 +40,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const tNav = useTranslations('nav');
   const tCommon = useTranslations('common');
+  const { logout } = useAuth();
 
   return (
     <aside className="flex w-72 flex-col border-r border-border-subtle bg-[var(--bg-sidebar)]">
@@ -69,11 +71,10 @@ export function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                  isActive
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${isActive
                     ? 'bg-bg-active text-accent'
                     : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary'
-                }`}
+                  }`}
               >
                 {iconMap[item.icon]}
                 <span className="font-medium">{tNav(item.key)}</span>
@@ -83,12 +84,25 @@ export function Sidebar() {
         </nav>
       </div>
 
-      <div className="mt-auto flex items-center gap-2 border-t border-border-subtle p-5">
-        <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
-        </span>
-        <span className="text-sm text-text-secondary">{tNav('liveActive')}</span>
+      <div className="mt-auto flex flex-col gap-3 border-t border-border-subtle p-5">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
+          </span>
+          <span className="text-sm text-text-secondary">{tNav('liveActive')}</span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => logout()}
+          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-text-secondary transition-colors hover:bg-bg-hover hover:text-danger"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          <span className="font-medium">{tNav('logout')}</span>
+        </button>
       </div>
     </aside>
   );

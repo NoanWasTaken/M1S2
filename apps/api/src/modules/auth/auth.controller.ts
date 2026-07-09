@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { registerSchema, loginSchema } from './auth.schema.js';
-import { registerWebmaster, loginUser, refreshUserSession, logoutUser } from './auth.service.js';
+import { registerSchema, loginSchema, resetPasswordSchema, forgotPasswordSchema } from './auth.schema.js';
+import { registerWebmaster, loginUser, refreshUserSession, logoutUser, requestPasswordReset, resetPassword } from './auth.service.js';
 import { AppError } from '../../utils/app-error.js';
 import { env } from '../../config/env.js';
 
@@ -23,7 +23,6 @@ export async function login(req: Request, res: Response) {
 
     const { accessToken, refreshToken, user } = await loginUser(result.data);
 
-    // The refresh token goes in a secure cookie, not in the JSON response
     res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: env.nodeEnv === 'production',
@@ -57,5 +56,23 @@ export async function logout(_req: Request, res: Response) {
 }
 
 export async function me(req: Request, res: Response) {
-    res.json({user: req.user});
+    res.json({ user: req.user });
+}
+
+export async function forgotPassword(req: Request, res: Response) {
+    const result = forgotPasswordSchema.safeParse(req.body);
+    if (!result.success) {
+        throw new AppError(400, 'invalid_input', 'Invalid data.');
+    }
+    await requestPasswordReset(result.data.email, result.data.locale);
+    res.json({ message: 'If an account exists, an email has been sent.' });
+}
+
+export async function resetPasswordController(req: Request, res: Response) {
+    const result = resetPasswordSchema.safeParse(req.body);
+    if (!result.success) {
+        throw new AppError(400, 'invalid_input', result.error.issues[0]?.message ?? 'Invalid data.');
+    }
+    await resetPassword(result.data.token, result.data.password);
+    res.json({ message: 'Password reset.' });
 }
