@@ -14,5 +14,8 @@ const eventSchema = new Schema(
     { timestamps: true },
 );
 
+eventSchema.index({ appId: 1, occurredAt: 1 });
+eventSchema.index({ appId: 1, type: 1, occurredAt: 1 });
+
 export type EventDoc = InferSchemaType<typeof eventSchema>;
 export const EventModel = model('Event', eventSchema);
