@@ -69,13 +69,13 @@ export async function getOverviewData(companyId: string, period: string) {
         _id: null,
         totalEvents: { $sum: 1 },
         pageViews: { $sum: { $cond: [{ $eq: ['$type', 'pageview'] }, 1, 0] } },
-        sessions: { $addToSet: '$payload.sessionId' },
+        sessions: { $addToSet: 'sessionId' },
         totalDuration: { $sum: { $ifNull: ['$payload.duration', 0] } },
         bouncedSessions: {
           $addToSet: {
             $cond: [
               { $eq: ['$type', 'pageview'] },
-              '$payload.sessionId',
+              'sessionId',
               null,
             ],
           },
@@ -129,7 +129,7 @@ export async function getOverviewData(companyId: string, period: string) {
       $group: {
         _id: null,
         pageViews: { $sum: { $cond: [{ $eq: ['$type', 'pageview'] }, 1, 0] } },
-        sessions: { $addToSet: '$payload.sessionId' },
+        sessions: { $addToSet: 'sessionId' },
       },
     },
     {
@@ -159,7 +159,7 @@ export async function getOverviewData(companyId: string, period: string) {
       $group: {
         _id: { $dateTrunc: { date: '$occurredAt', unit: truncUnit } },
         pageViews: { $sum: { $cond: [{ $eq: ['$type', 'pageview'] }, 1, 0] } },
-        sessionIds: { $addToSet: '$payload.sessionId' },
+        sessionIds: { $addToSet: 'sessionId' },
       },
     },
     { $sort: { _id: 1 as const } },
@@ -188,7 +188,7 @@ export async function getOverviewData(companyId: string, period: string) {
       $group: {
         _id: '$url',
         views: { $sum: 1 },
-        sessionIds: { $addToSet: '$payload.sessionId' },
+        sessionIds: { $addToSet: 'sessionId' },
         totalDuration: { $sum: { $ifNull: ['$payload.duration', 0] } },
       },
     },
