@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import { createServer } from 'http';
 import { env } from './config/env.js';
 import { connectToDatabase } from './config/db.js';
 import authRouter from './modules/auth/auth.routes.js';
@@ -13,6 +14,8 @@ import ingestionRouter from './modules/ingestion/ingestion.routes.js';
 import trackingRouter from './modules/tracking/tracking.routes.js';
 import dashboardRouter from './modules/dashboard/dashboard.routes.js';
 import widgetRouter from './modules/dashboard/widget.routes.js';
+
+import { initGateway } from './realtime/gateway.js';
 
 import analyticsRouter from './modules/analytics/analytics.routes.js';
 
@@ -64,7 +67,11 @@ async function start() {
 
   app.use(errorHandler);
 
-  app.listen(env.port, () => {
+  // Wrap Express in a raw HTTP server so Socket.IO can share the same port
+  const httpServer = createServer(app);
+  await initGateway(httpServer);
+
+  httpServer.listen(env.port, () => {
     console.log(`API ready on http://localhost:${env.port}`);
   });
 }
