@@ -13,6 +13,9 @@ import ingestionRouter from './modules/ingestion/ingestion.routes.js';
 import trackingRouter from './modules/tracking/tracking.routes.js';
 import dashboardRouter from './modules/dashboard/dashboard.routes.js';
 import widgetRouter from './modules/dashboard/widget.routes.js';
+
+import analyticsRouter from './modules/analytics/analytics.routes.js';
+
 import cookieParser from 'cookie-parser';
 
 async function start() {
@@ -36,11 +39,15 @@ async function start() {
 
   app.use('/api/v1/auth', authRouter);
   app.use('/api/v1/admin', adminRouter);
+  
   app.use('/api/v1/applications', applicationRouter);
   app.use('/api/v1/team', teamRouter);
   app.use('/api/v1/tracking', trackingRouter);
+
   app.use('/api/v1/dashboard', dashboardRouter);
   app.use('/api/v1/dashboard', widgetRouter);
+
+  app.use('/api/v1/analytics', analyticsRouter);
 
   // ALWAYS AFTER the routes
   const ingestionCors = cors({
