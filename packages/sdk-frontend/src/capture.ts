@@ -1,3 +1,5 @@
+import { PageTimer } from './timer.js';
+
 type TrackFn = (type: string, payload?: Record<string, unknown>) => void;
 type ElementNature = 'navigation' | 'action' | 'unknown';
 
@@ -25,8 +27,8 @@ function describe(el: HTMLElement) {
     const { nature, href } = classifyElement(el);
     return {
         tag: el.tagName.toLowerCase(),
-        nature,                       
-        href,                         
+        nature,
+        href,
         id: el.id || undefined,
         text: el.textContent?.trim().slice(0, 100) || undefined,
     };
@@ -35,6 +37,33 @@ function describe(el: HTMLElement) {
 export function startAutoCapture(track: TrackFn): void {
     // 1. Page view
     track('pageview', { referrer: document.referrer });
+
+    let timer = new PageTimer();
+
+    const sendPageDuration = () => {
+        const duration = timer.getDuration();
+        if (duration > 0) {
+            track('page_exit', { duration });
+        }
+    };
+
+    document.addEventListener('visibilitychange', () => {
+        track('tabchange', { state: document.visibilityState });
+        if (document.visibilityState === 'hidden') {
+            timer.pause();
+        } else {
+            timer.resume();
+        }
+    });
+
+    window.addEventListener('pagehide', () => {
+        sendPageDuration();
+    });
+    window.addEventListener('popstate', () => {
+        sendPageDuration();      
+        timer = new PageTimer();    
+        track('pageview', { referrer: document.referrer });
+    });
 
     // 2. Clicks interactive elements
     document.addEventListener('click', (e) => {

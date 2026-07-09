@@ -1,5 +1,7 @@
 import { EventModel } from '../../models/event.js';
 import type { IngestBatchInput } from './ingestion.schema.js';
+import { normalizeUrl } from '../../utils/normalize-url.js';
+
 
 export async function ingestBrowserEvents(appId: string, batch: IngestBatchInput) {
     const now = new Date();
@@ -8,7 +10,7 @@ export async function ingestBrowserEvents(appId: string, batch: IngestBatchInput
     const documents = batch.events.map((e) => ({
         appId,
         type: e.type,
-        url: e.url,
+        url: normalizeUrl(e.url),
         occurredAt: e.occurredAt ? new Date(e.occurredAt) : now,
         visitorId: e.visitorId,
         sessionId: e.sessionId,
