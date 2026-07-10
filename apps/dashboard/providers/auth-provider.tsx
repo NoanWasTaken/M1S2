@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccessToken(token);
         const meRes = await api.get('/api/v1/auth/me');
         setUser({
-          id: meRes.data.user.sub,
+          id: meRes.data.user._id,
           email: '',
           role: meRes.data.user.role,
           companyId: meRes.data.user.companyId,

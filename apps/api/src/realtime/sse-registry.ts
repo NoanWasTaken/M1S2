@@ -6,23 +6,11 @@ const rooms = new Map<string, Set<Response>>();
 export function addSubscriber(accountId: string, res: Response): void {
   if (!registry.has(accountId)) registry.set(accountId, new Set());
   registry.get(accountId)!.add(res);
-  console.log(`[SSE] +1 subscriber for account ${accountId} (total: ${registry.get(accountId)!.size})`);
 }
 
 export function removeSubscriber(accountId: string, res: Response): void {
   registry.get(accountId)?.delete(res);
   if (registry.get(accountId)?.size === 0) registry.delete(accountId);
-  console.log(`[SSE] -1 subscriber for account ${accountId}`);
-}
-
-export function pushToAccount(accountId: string, event: string, data: unknown): void {
-  const subscribers = registry.get(accountId);
-  if (!subscribers || subscribers.size === 0) return;
-
-  const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-  for (const res of subscribers) {
-    res.write(payload);
-  }
 }
 
 export function addToRoom(roomId: string, res: Response): void {
@@ -41,7 +29,25 @@ export function pushToRoom(roomId: string, event: string, data: unknown): void {
 
   const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
   for (const res of subscribers) {
-    res.write(payload);
+    try {
+      res.write(payload);
+    } catch {
+      removeFromRoom(roomId, res);
+    }
+  }
+}
+
+export function pushToAccount(accountId: string, event: string, data: unknown): void {
+  const subscribers = registry.get(accountId);
+  if (!subscribers || subscribers.size === 0) return;
+
+  const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  for (const res of subscribers) {
+    try {
+      res.write(payload);
+    } catch {
+      removeSubscriber(accountId, res);
+    }
   }
 }
 
@@ -53,7 +59,11 @@ export function startHeartbeat(): void {
   setInterval(() => {
     for (const [, subscribers] of registry) {
       for (const res of subscribers) {
-        res.write(':\n\n'); 
+        try {
+          res.write(':\n\n');
+        } catch {
+          // connection lost, cleanup happens on req.close
+        }
       }
     }
   }, 15_000);
