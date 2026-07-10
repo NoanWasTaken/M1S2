@@ -7,6 +7,8 @@ type HeaderProps = {
   activeVisitors?: number;
   isEditing?: boolean;
   onToggleEdit?: () => void;
+  period?: string;
+  onPeriodChange?: (period: string) => void;
 };
 
 const periodKeyMap: Record<string, 'period24h' | 'period7d' | 'period30d' | 'period90d'> = {
@@ -16,7 +18,13 @@ const periodKeyMap: Record<string, 'period24h' | 'period7d' | 'period30d' | 'per
   '90d': 'period90d',
 };
 
-export function Header({ activeVisitors = 327, isEditing, onToggleEdit }: HeaderProps) {
+export function Header({
+  activeVisitors = 327,
+  isEditing,
+  onToggleEdit,
+  period = '24h',
+  onPeriodChange,
+}: HeaderProps) {
   const tNav = useTranslations('nav');
   const tD = useTranslations('dashboard');
   const tCommon = useTranslations('common');
@@ -44,11 +52,10 @@ export function Header({ activeVisitors = 327, isEditing, onToggleEdit }: Header
         <button
           type="button"
           onClick={onToggleEdit}
-          className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
-            isEditing
+          className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${isEditing
               ? 'border-accent bg-accent text-[#05070d]'
               : 'border-border-subtle text-text-secondary hover:border-accent hover:text-accent'
-          }`}
+            }`}
           aria-label={isEditing ? tCommon('done') : tCommon('edit')}
         >
           {isEditing ? (
@@ -61,17 +68,17 @@ export function Header({ activeVisitors = 327, isEditing, onToggleEdit }: Header
         </button>
 
         <div className="flex items-center rounded-lg border border-border-subtle p-0.5">
-          {['24h', '7d', '30d', '90d'].map((period) => (
+          {['24h', '7d', '30d', '90d'].map((p) => (
             <button
-              key={period}
+              key={p}
               type="button"
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                period === '24h'
+              onClick={() => onPeriodChange?.(p)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${period === p
                   ? 'bg-accent text-[#05070d]'
                   : 'text-text-secondary hover:text-text-primary'
-              }`}
+                }`}
             >
-              {tD(periodKeyMap[period])}
+              {tD(periodKeyMap[p])}
             </button>
           ))}
         </div>
