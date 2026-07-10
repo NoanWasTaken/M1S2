@@ -14,6 +14,7 @@ import dashboardRouter from './modules/dashboard/dashboard.routes.js';
 import widgetRouter from './modules/dashboard/widget.routes.js';
 import analyticsRouter from './modules/analytics/analytics.routes.js';
 import companyRouter from './modules/company/company.routes.js';
+import conversationsRouter from './modules/conversations/conversations.routes.js';
 import cookieParser from 'cookie-parser';
 import sseRouter from './realtime/sse.route.js';
 import { startHeartbeat } from './realtime/sse-registry.js';
@@ -40,6 +41,7 @@ async function start() {
   app.use('/api/v1/analytics', analyticsRouter);
   app.use('/api/v1/company', companyRouter);
   app.use('/api/v1/realtime', sseRouter);
+  app.use('/api/v1/conversations', conversationsRouter);
 
   const ingestionCors = cors({ origin: true, methods: ['POST', 'OPTIONS'], allowedHeaders: ['Content-Type', 'x-app-id'] });
   const ingestionHelmet = helmet({ crossOriginResourcePolicy: false });

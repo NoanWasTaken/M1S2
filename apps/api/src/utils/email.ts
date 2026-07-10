@@ -69,3 +69,22 @@ export async function sendPasswordResetEmail(
     const body = `<p>${t.resetIntro}</p>${button(resetUrl, t.resetButton)}<p>${t.resetOutro}</p>`;
     await send(to, t.resetSubject, layout(t.resetTitle, body));
 }
+
+export async function sendNewConversationEmail(
+    to: string,
+    conversationId: string,
+    subject: string,
+): Promise<void> {
+    const url = `${env.appWebUrl}/admin/support?id=${conversationId}`;
+    const body = `<p>Une nouvelle demande de support a été créée :</p><p><strong>${subject}</strong></p>${button(url, 'Voir la conversation')}`;
+    await send(to, `Nouvelle demande de support — ${subject}`, layout('Nouvelle demande de support', body));
+}
+
+export async function sendConversationAcceptedEmail(
+    to: string,
+    conversationId: string,
+): Promise<void> {
+    const url = `${env.appWebUrl}/support?id=${conversationId}`;
+    const body = `<p>Votre demande de support a été prise en charge.</p><p>${button(url, 'Voir la conversation')}</p>`;
+    await send(to, 'Votre demande de support a été prise en charge', layout('Demande prise en charge', body));
+}
