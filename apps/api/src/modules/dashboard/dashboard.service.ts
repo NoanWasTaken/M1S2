@@ -43,9 +43,13 @@ function getDateTruncUnit(period: string) {
   }
 }
 
-export async function getOverviewData(companyId: string, period: string) {
+export async function getOverviewData(companyId: string, period: string, appId?: string) {
   const applications = await ApplicationModel.find({ companyId }).select('appId');
-  const appIds = applications.map((a) => a.appId);
+  let appIds = applications.map((a) => a.appId);
+
+  if (appId) {
+    appIds = appIds.filter((id) => id === appId);
+  }
 
   if (appIds.length === 0) {
     return {
@@ -54,6 +58,7 @@ export async function getOverviewData(companyId: string, period: string) {
       topPages: [],
       sources: [],
       devices: [],
+      activePages: [],
     };
   }
 
