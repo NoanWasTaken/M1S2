@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { getAccessToken, refreshAccessToken } from './api-client';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -38,7 +39,45 @@ type UseConversationStreamOptions = {
   onNewConversation?: (payload: SupportNewConversationEvent) => void;
 };
 
-export function useConversationStream(options: UseConversationStreamOptions = {}) {
+function attachHandlers(es: EventSource, handlersRef: React.MutableRefObject<UseConversationStreamOptions>) {
+  es.addEventListener('support:message', (e: MessageEvent) => {
+    try {
+      const payload = JSON.parse(e.data) as SupportMessageEvent;
+      handlersRef.current.onMessage?.(payload);
+    } catch {
+      console.error('[SSE] Failed to parse support:message', e.data);
+    }
+  });
+
+  es.addEventListener('support:presence', (e: MessageEvent) => {
+    try {
+      const payload = JSON.parse(e.data) as SupportPresenceEvent;
+      handlersRef.current.onPresence?.(payload);
+    } catch {
+      console.error('[SSE] Failed to parse support:presence', e.data);
+    }
+  });
+
+  es.addEventListener('support:typing', (e: MessageEvent) => {
+    try {
+      const payload = JSON.parse(e.data) as SupportTypingEvent;
+      handlersRef.current.onTyping?.(payload);
+    } catch {
+      console.error('[SSE] Failed to parse support:typing', e.data);
+    }
+  });
+
+  es.addEventListener('support:new-conversation', (e: MessageEvent) => {
+    try {
+      const payload = JSON.parse(e.data) as SupportNewConversationEvent;
+      handlersRef.current.onNewConversation?.(payload);
+    } catch {
+      console.error('[SSE] Failed to parse support:new-conversation', e.data);
+    }
+  });
+}
+
+export function useConversationStream(options: UseConversationStreamOptions = {}, reconnectKey?: string) {
   const handlersRef = useRef(options);
 
   useEffect(() => {
@@ -46,48 +85,39 @@ export function useConversationStream(options: UseConversationStreamOptions = {}
   }, [options]);
 
   useEffect(() => {
-    const es = new EventSource(`${API_URL}/api/v1/realtime/stream`, {
-      withCredentials: true,
-    });
+    let cancelled = false;
+    let es: EventSource | null = null;
 
-    es.addEventListener('support:message', (e: MessageEvent) => {
-      try {
-        const payload = JSON.parse(e.data) as SupportMessageEvent;
-        handlersRef.current.onMessage?.(payload);
-      } catch {
-        console.error('[SSE] Failed to parse support:message', e.data);
-      }
-    });
+    function connect() {
+      if (cancelled) return;
 
-    es.addEventListener('support:presence', (e: MessageEvent) => {
-      try {
-        const payload = JSON.parse(e.data) as SupportPresenceEvent;
-        handlersRef.current.onPresence?.(payload);
-      } catch {
-        console.error('[SSE] Failed to parse support:presence', e.data);
-      }
-    });
+      const token = getAccessToken();
+      const url = token
+        ? `${API_URL}/api/v1/realtime/stream?token=${token}`
+        : `${API_URL}/api/v1/realtime/stream`;
 
-    es.addEventListener('support:typing', (e: MessageEvent) => {
-      try {
-        const payload = JSON.parse(e.data) as SupportTypingEvent;
-        handlersRef.current.onTyping?.(payload);
-      } catch {
-        console.error('[SSE] Failed to parse support:typing', e.data);
-      }
-    });
+      es?.close();
+      es = new EventSource(url);
 
-    es.addEventListener('support:new-conversation', (e: MessageEvent) => {
+      attachHandlers(es, handlersRef);
+    }
+
+    connect();
+
+    const refreshInterval = setInterval(async () => {
+      if (cancelled) return;
       try {
-        const payload = JSON.parse(e.data) as SupportNewConversationEvent;
-        handlersRef.current.onNewConversation?.(payload);
+        await refreshAccessToken();
       } catch {
-        console.error('[SSE] Failed to parse support:new-conversation', e.data);
+        return;
       }
-    });
+      connect();
+    }, 10 * 60 * 1000);
 
     return () => {
-      es.close();
+      cancelled = true;
+      clearInterval(refreshInterval);
+      es?.close();
     };
-  }, []);
+  }, [reconnectKey]);
 }

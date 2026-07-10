@@ -113,7 +113,11 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
               >
                 {msg.type !== 'system' && (
                   <p className="mb-0.5 text-[11px] font-medium opacity-70">
-                    {msg.senderRole === 'admin' ? 'Support' : 'Vous'}
+                    {msg.senderRole === 'admin'
+                      ? 'Support'
+                      : user?.role === 'admin'
+                        ? 'Client'
+                        : 'Vous'}
                   </p>
                 )}
                 <p className="text-sm leading-relaxed">{msg.content}</p>

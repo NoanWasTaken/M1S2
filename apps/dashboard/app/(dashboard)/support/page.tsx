@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ConversationList } from '@/components/support/conversation-list';
 import { ConversationThread } from '@/components/support/conversation-thread';
@@ -11,15 +12,28 @@ import { useConversationStream, type SupportMessageEvent, type SupportPresenceEv
 
 export default function SupportPage() {
   const t = useTranslations('support');
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [statusFilter, setStatusFilter] = useState<ConversationStatus | undefined>(undefined);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [unreadTotal, setUnreadTotal] = useState(0);
   const [showNew, setShowNew] = useState(false);
   const [loading, setLoading] = useState(true);
-  const typingUserId = useRef<string | null>(null);
+  const [typingUserId, setTypingUserId] = useState<string | null>(null);
+
+  const activeId = searchParams.get('conversation');
+
+  const setActiveId = useCallback((id: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (id) {
+      params.set('conversation', id);
+    } else {
+      params.delete('conversation');
+    }
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }, [router, searchParams]);
 
   const load = useCallback(async () => {
     try {
@@ -36,20 +50,35 @@ export default function SupportPage() {
   }, [load]);
 
   useEffect(() => {
+    if (activeId) {
+      setTypingUserId(null);
+      setUnreadCounts((prev) => ({ ...prev, [activeId]: 0 }));
+      fetchMessages(activeId)
+        .then((data) => setMessages(data.messages))
+        .catch(() => {});
+    } else {
+      setMessages([]);
+    }
+  }, [activeId]);
+
+  useEffect(() => {
     getUnreadCount().then(setUnreadTotal).catch(() => {});
   }, [conversations]);
 
   const handleMessage = useCallback((payload: SupportMessageEvent) => {
     if (payload.conversationId === activeId) {
-      setMessages((prev) => [...prev, {
-        _id: payload.messageId,
-        conversationId: payload.conversationId,
-        senderId: payload.senderId,
-        senderRole: payload.senderRole,
-        content: payload.content,
-        type: 'text',
-        createdAt: payload.sentAt,
-      }]);
+      setMessages((prev) => {
+        if (prev.some((m) => m._id === payload.messageId)) return prev;
+        return [...prev, {
+          _id: payload.messageId,
+          conversationId: payload.conversationId,
+          senderId: payload.senderId,
+          senderRole: payload.senderRole,
+          content: payload.content,
+          type: 'text',
+          createdAt: payload.sentAt,
+        }];
+      });
     }
     setUnreadCounts((prev) => ({
       ...prev,
@@ -64,7 +93,7 @@ export default function SupportPage() {
 
   const handleTyping = useCallback((payload: SupportTypingEvent) => {
     if (payload.conversationId === activeId) {
-      typingUserId.current = payload.isTyping ? payload.userId : null;
+      setTypingUserId(payload.isTyping ? payload.userId : null);
     }
   }, [activeId]);
 
@@ -72,23 +101,17 @@ export default function SupportPage() {
     onMessage: handleMessage,
     onPresence: handlePresence,
     onTyping: handleTyping,
-  });
+  }, activeId || undefined);
 
   const handleSelect = async (id: string) => {
     setActiveId(id);
-    setMessages([]);
-    setUnreadCounts((prev) => ({ ...prev, [id]: 0 }));
-    try {
-      const data = await fetchMessages(id);
-      setMessages(data.messages);
-    } catch {
-    }
   };
 
   const handleClose = async () => {
     if (!activeId) return;
     try {
       await closeConversation(activeId);
+      setActiveId(null);
       load();
     } catch {
     }
@@ -138,8 +161,8 @@ export default function SupportPage() {
             <ConversationThread
               conversationId={activeConv._id}
               messages={messages}
-              onNewMessage={(msg) => setMessages((prev) => [...prev, msg])}
-              typingUserId={typingUserId.current}
+              onNewMessage={(msg) => setMessages((prev) => prev.some((m) => m._id === msg._id) ? prev : [...prev, msg])}
+              typingUserId={typingUserId}
               onClose={handleClose}
               status={activeConv.status}
             />
