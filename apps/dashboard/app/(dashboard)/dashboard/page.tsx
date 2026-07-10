@@ -11,9 +11,10 @@ import { ProgressList } from '@/components/dashboard/progress-list';
 import { Header } from '@/components/dashboard/header';
 import { WidgetGrid, type WidgetDef } from '@/components/dashboard/widget-grid';
 import { WidgetRenderer } from '@/components/dashboard/widget';
-import { activePagesData } from '@/lib/mock-data';
 import { fetchDashboardData, mockDashboardData, type DashboardData } from '@/lib/dashboard-api';
 import { api } from '@/lib/api-client';
+import { useDashboardSocket } from '@/lib/dashboard-socket';
+
 
 const COLUMNS = 12;
 
@@ -37,7 +38,7 @@ function buildDataSources(data: DashboardData): Record<string, unknown> {
   return {
     kpi: data.kpi,
     'area-chart': data.traffic,
-    'live-list': activePagesData,
+    'live-list': data.activePages,
     'data-table': data.topPages,
     'donut-chart': data.sources,
     'progress-list': data.devices,
@@ -132,7 +133,7 @@ function StaticWidget({
     case 'area-chart':
       return <AreaChart data={data as DashboardData['traffic']} />;
     case 'live-list':
-      return <LiveList data={data as typeof activePagesData} />;
+      return <LiveList data={data as DashboardData['activePages']} />;
     case 'data-table':
       return <DataTable data={data as DashboardData['topPages']} />;
     case 'donut-chart':
@@ -187,6 +188,12 @@ export default function OverviewPage() {
 
   const dataSources = useMemo(() => buildDataSources(data), [data]);
 
+  const { activeVisitors } = useDashboardSocket({
+    onUpdate: () => {
+      fetchDashboardData(period).then(setData).catch(() => { });
+    },
+  });
+
   const handleLayoutChange = useCallback((updated: WidgetDef[]) => {
     setWidgets(updated);
     api.put('/api/v1/dashboard/widgets', { widgets: updated }).catch(() => { });
@@ -199,6 +206,7 @@ export default function OverviewPage() {
         onToggleEdit={() => setIsEditing((v) => !v)}
         period={period}
         onPeriodChange={setPeriod}
+        activeVisitors={activeVisitors ?? 0}
       />
 
       {isEditing ? (

@@ -1,11 +1,10 @@
 import { EventModel } from '../../models/event.js';
 import type { IngestBatchInput } from './ingestion.schema.js';
 import { normalizeUrl } from '../../utils/normalize-url.js';
-
+import { emitDashboardUpdate } from '../../realtime/live-stats.js';
 
 export async function ingestBrowserEvents(appId: string, batch: IngestBatchInput) {
     const now = new Date();
-
     // Transform each received event into a document
     const documents = batch.events.map((e) => ({
         appId,
@@ -17,16 +16,17 @@ export async function ingestBrowserEvents(appId: string, batch: IngestBatchInput
         source: 'browser' as const,
         payload: e.payload ?? {},
     }));
-
     // Insert grouped documents
     await EventModel.insertMany(documents);
+
+    // Fire-and-forget live push (never blocks or breaks ingestion)
+    void emitDashboardUpdate(appId);
 
     return { received: documents.length };
 }
 
 export async function ingestServerEvents(appId: string, batch: IngestBatchInput) {
     const now = new Date();
-
     const documents = batch.events.map((e) => ({
         appId,
         type: e.type,
@@ -37,8 +37,9 @@ export async function ingestServerEvents(appId: string, batch: IngestBatchInput)
         source: 'server' as const,
         payload: e.payload ?? {},
     }));
-
     await EventModel.insertMany(documents);
+
+    void emitDashboardUpdate(appId);
 
     return { received: documents.length };
 }

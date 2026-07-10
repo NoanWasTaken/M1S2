@@ -255,6 +255,37 @@ export async function getOverviewData(companyId: string, period: string) {
     color: sourceColors[s._id] || '#6b7280',
   }));
 
+
+  // --- Active pages (last 5 minutes), distinct visitors per page ---
+  const activeSince = new Date(Date.now() - 5 * 60 * 1000);
+  const activePagesPipeline: PipelineStage[] = [
+    {
+      $match: {
+        appId: { $in: appIds },
+        type: 'pageview',
+        url: { $exists: true, $ne: null },
+        sessionId: { $ne: null },
+        occurredAt: { $gte: activeSince },
+      },
+    },
+    {
+      $group: {
+        _id: '$url',
+        sessionIds: { $addToSet: '$sessionId' },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        path: '$_id',
+        visitors: { $size: { $ifNull: ['$sessionIds', []] } },
+      },
+    },
+    { $sort: { visitors: -1 as const } },
+    { $limit: 7 },
+  ];
+  const activePages = await EventModel.aggregate(activePagesPipeline);
+
   // --- Devices pipeline ---
   const devicesPipeline: PipelineStage[] = [
     matchStage,
@@ -292,5 +323,6 @@ export async function getOverviewData(companyId: string, period: string) {
     topPages,
     sources,
     devices,
+    activePages,
   };
 }

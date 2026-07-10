@@ -18,6 +18,7 @@ import widgetRouter from './modules/dashboard/widget.routes.js';
 import { initGateway } from './realtime/gateway.js';
 
 import analyticsRouter from './modules/analytics/analytics.routes.js';
+import companyRouter from './modules/company/company.routes.js';
 
 import cookieParser from 'cookie-parser';
 
@@ -51,7 +52,8 @@ async function start() {
   app.use('/api/v1/dashboard', widgetRouter);
 
   app.use('/api/v1/analytics', analyticsRouter);
-
+  app.use('/api/v1/company', companyRouter);
+  
   // ALWAYS AFTER the routes
   const ingestionCors = cors({
     origin: true,

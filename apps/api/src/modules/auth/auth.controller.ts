@@ -3,6 +3,8 @@ import { registerSchema, loginSchema, resetPasswordSchema, forgotPasswordSchema 
 import { registerWebmaster, loginUser, refreshUserSession, logoutUser, requestPasswordReset, resetPassword } from './auth.service.js';
 import { AppError } from '../../utils/app-error.js';
 import { env } from '../../config/env.js';
+import { UserModel } from '../../models/user.js';
+
 
 export async function register(req: Request, res: Response) {
     const result = registerSchema.safeParse(req.body);
@@ -56,7 +58,8 @@ export async function logout(_req: Request, res: Response) {
 }
 
 export async function me(req: Request, res: Response) {
-    res.json({ user: req.user });
+    const user = await UserModel.findById(req.user!.sub).select('email role teamRole status companyId createdAt');
+    res.json({ user });
 }
 
 export async function forgotPassword(req: Request, res: Response) {

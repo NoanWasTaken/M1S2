@@ -11,6 +11,8 @@ export interface ServerToClientEvents {
   "support:typing": (payload: TypingPayload) => void;
 
   "alert:audience-peak": (payload: AudiencePeakPayload) => void;
+
+  "dashboard:update": (payload: DashboardUpdatePayload) => void;
 }
 
 
@@ -33,10 +35,16 @@ export interface InterServerEvents {
 
 export interface SocketData {
   userId: string;
-  accountId: string;       
+  accountId: string;
   role: "admin" | "webmaster" | "visitor";
   sessionId: string;
   connectionState: ConnectionState;
+}
+
+export interface DashboardUpdatePayload {
+  accountId: string;
+  activeVisitors: number;
+  computedAt: string;
 }
 
 export type ConnectionState =
