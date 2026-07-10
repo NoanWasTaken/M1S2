@@ -11,14 +11,8 @@ import { ProgressList } from '@/components/dashboard/progress-list';
 import { Header } from '@/components/dashboard/header';
 import { WidgetGrid, type WidgetDef } from '@/components/dashboard/widget-grid';
 import { WidgetRenderer } from '@/components/dashboard/widget';
-import {
-  kpiData,
-  trafficData,
-  activePagesData,
-  topPagesData,
-  trafficSourcesData,
-  devicesData,
-} from '@/lib/mock-data';
+import { activePagesData } from '@/lib/mock-data';
+import { fetchDashboardData, mockDashboardData, type DashboardData } from '@/lib/dashboard-api';
 import { api } from '@/lib/api-client';
 
 const COLUMNS = 12;
@@ -37,16 +31,26 @@ function colSpanClass(s: 'full' | 'two-thirds' | 'third') {
   return 'lg:col-span-1';
 }
 
-const dataSources: Record<string, unknown> = {
-  kpi: kpiData,
-  'area-chart': trafficData,
-  'live-list': activePagesData,
-  'data-table': topPagesData,
-  'donut-chart': trafficSourcesData,
-  'progress-list': devicesData,
-};
+// Build the per-type data map from the real dashboard data.
+// live-list ("Pages actives") stays on mock until the realtime lot (LOT 8).
+function buildDataSources(data: DashboardData): Record<string, unknown> {
+  return {
+    kpi: data.kpi,
+    'area-chart': data.traffic,
+    'live-list': activePagesData,
+    'data-table': data.topPages,
+    'donut-chart': data.sources,
+    'progress-list': data.devices,
+  };
+}
 
-function StaticDashboard({ widgets }: { widgets: WidgetDef[] }) {
+function StaticDashboard({
+  widgets,
+  dataSources,
+}: {
+  widgets: WidgetDef[];
+  dataSources: Record<string, unknown>;
+}) {
   const rows = useMemo(() => {
     const sorted = [...widgets].sort((a, b) => a.position.y - b.position.y || a.position.x - b.position.x);
     const merged: { y: number; left: WidgetDef[]; right: WidgetDef[] }[] = [];
@@ -80,7 +84,7 @@ function StaticDashboard({ widgets }: { widgets: WidgetDef[] }) {
           return (
             <div key={w.widgetId} className="grid grid-cols-1 gap-4 lg:grid-cols-3 items-start">
               <div className={colSpanClass(span(w.position.w))}>
-                <StaticWidget widget={w} />
+                <StaticWidget widget={w} dataSources={dataSources} />
               </div>
             </div>
           );
@@ -90,13 +94,13 @@ function StaticDashboard({ widgets }: { widgets: WidgetDef[] }) {
           <div key={row.y} className="grid grid-cols-1 gap-4 lg:grid-cols-3 items-start">
             {row.left.map((w) => (
               <div key={w.widgetId} className={colSpanClass(span(w.position.w))}>
-                <StaticWidget widget={w} />
+                <StaticWidget widget={w} dataSources={dataSources} />
               </div>
             ))}
             {row.right.length > 0 && (
               <div className="flex flex-col gap-4 lg:col-span-1">
                 {row.right.map((w) => (
-                  <StaticWidget key={w.widgetId} widget={w} />
+                  <StaticWidget key={w.widgetId} widget={w} dataSources={dataSources} />
                 ))}
               </div>
             )}
@@ -107,28 +111,34 @@ function StaticDashboard({ widgets }: { widgets: WidgetDef[] }) {
   );
 }
 
-function StaticWidget({ widget }: { widget: WidgetDef }) {
+function StaticWidget({
+  widget,
+  dataSources,
+}: {
+  widget: WidgetDef;
+  dataSources: Record<string, unknown>;
+}) {
   const data = dataSources[widget.type];
 
   switch (widget.type) {
     case 'kpi':
       return (
         <KpiGrid>
-          {(data as typeof kpiData).map((kpi) => (
+          {(data as DashboardData['kpi']).map((kpi) => (
             <KpiCard key={kpi.id} {...kpi} />
           ))}
         </KpiGrid>
       );
     case 'area-chart':
-      return <AreaChart data={data as typeof trafficData} />;
+      return <AreaChart data={data as DashboardData['traffic']} />;
     case 'live-list':
       return <LiveList data={data as typeof activePagesData} />;
     case 'data-table':
-      return <DataTable data={data as typeof topPagesData} />;
+      return <DataTable data={data as DashboardData['topPages']} />;
     case 'donut-chart':
-      return <DonutChart data={data as typeof trafficSourcesData} />;
+      return <DonutChart data={data as DashboardData['sources']} />;
     case 'progress-list':
-      return <ProgressList data={data as typeof devicesData} />;
+      return <ProgressList data={data as DashboardData['devices']} />;
     default:
       return null;
   }
@@ -152,7 +162,10 @@ const defaultWidgets: WidgetDef[] = [
 export default function OverviewPage() {
   const [widgets, setWidgets] = useState<WidgetDef[]>([]);
   const [isEditing, setIsEditing] = useState(false);
+  const [period, setPeriod] = useState('24h');
+  const [data, setData] = useState<DashboardData>(mockDashboardData);
 
+  // Load widget layout
   useEffect(() => {
     api
       .get('/api/v1/dashboard/widgets')
@@ -165,24 +178,39 @@ export default function OverviewPage() {
       });
   }, []);
 
-  const handleLayoutChange = useCallback(
-    (updated: WidgetDef[]) => {
-      setWidgets(updated);
-      api.put('/api/v1/dashboard/widgets', { widgets: updated }).catch(() => {});
-    },
-    [],
-  );
+  // Load real dashboard data whenever the period changes
+  useEffect(() => {
+    fetchDashboardData(period)
+      .then(setData)
+      .catch(() => setData(mockDashboardData)); // fallback dev
+  }, [period]);
+
+  const dataSources = useMemo(() => buildDataSources(data), [data]);
+
+  const handleLayoutChange = useCallback((updated: WidgetDef[]) => {
+    setWidgets(updated);
+    api.put('/api/v1/dashboard/widgets', { widgets: updated }).catch(() => { });
+  }, []);
 
   return (
     <>
-      <Header isEditing={isEditing} onToggleEdit={() => setIsEditing((v) => !v)} />
+      <Header
+        isEditing={isEditing}
+        onToggleEdit={() => setIsEditing((v) => !v)}
+        period={period}
+        onPeriodChange={setPeriod}
+      />
 
       {isEditing ? (
         <div className="p-6">
-          <WidgetGrid widgets={widgets} onLayoutChange={handleLayoutChange} renderWidget={(w) => <WidgetRenderer widget={w} />} />
+          <WidgetGrid
+            widgets={widgets}
+            onLayoutChange={handleLayoutChange}
+            renderWidget={(w) => <WidgetRenderer widget={w} />}
+          />
         </div>
       ) : (
-        <StaticDashboard widgets={widgets} />
+        <StaticDashboard widgets={widgets} dataSources={dataSources} />
       )}
 
       <HelpButton />

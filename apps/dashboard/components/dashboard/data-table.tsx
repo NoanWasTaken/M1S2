@@ -9,13 +9,19 @@ type TopPageRow = {
   name: string;
   path: string;
   views: number;
-  evol: number;
+  evol?: number; // optional: the real API may not provide it
   avgDuration: string;
 };
 
 type DataTableProps = {
   data: TopPageRow[];
 };
+
+// 3 -> "3", 1200 -> "1.2K", 18400 -> "18.4K"
+function formatViews(views: number): string {
+  if (views >= 1000) return `${(views / 1000).toFixed(1)}K`;
+  return String(views);
+}
 
 export function DataTable({ data }: DataTableProps) {
   const t = useTranslations('dashboard');
@@ -45,10 +51,14 @@ export function DataTable({ data }: DataTableProps) {
                 </div>
               </td>
               <td className="py-3 text-right font-mono text-text-primary">
-                {(row.views / 1000).toFixed(1)}K
+                {formatViews(row.views)}
               </td>
               <td className="py-3 text-right">
-                <DeltaBadge value={row.evol} />
+                {typeof row.evol === 'number' ? (
+                  <DeltaBadge value={row.evol} />
+                ) : (
+                  <span className="text-text-tertiary">—</span>
+                )}
               </td>
               <td className="py-3 text-right font-mono text-sm text-text-secondary">
                 {row.avgDuration}
