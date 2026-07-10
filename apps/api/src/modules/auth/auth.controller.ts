@@ -5,6 +5,17 @@ import { AppError } from '../../utils/app-error.js';
 import { env } from '../../config/env.js';
 import { UserModel } from '../../models/user.js';
 
+const isProd = env.nodeEnv === 'production';
+
+function refreshCookieOptions() {
+  return {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: 'lax' as const,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    ...(isProd && env.cookieDomain ? { domain: env.cookieDomain } : {}),
+  };
+}
 
 export async function register(req: Request, res: Response) {
     const result = registerSchema.safeParse(req.body);
@@ -18,39 +29,27 @@ export async function register(req: Request, res: Response) {
 }
 
 export async function login(req: Request, res: Response) {
-    const result = loginSchema.safeParse(req.body);
-    if (!result.success) {
-        throw new AppError(400, 'invalid_input', 'Invalid data.');
-    }
+  const result = loginSchema.safeParse(req.body);
+  if (!result.success) throw new AppError(400, 'invalid_input', 'Invalid data.');
 
-    const { accessToken, refreshToken, user } = await loginUser(result.data);
-
-    res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: env.nodeEnv === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
-
-    res.json({ accessToken, user });
+  const { accessToken, refreshToken, user } = await loginUser(result.data);
+  res.cookie('refreshToken', refreshToken, refreshCookieOptions());
+  res.json({ accessToken, user });
 }
 
 export async function refresh(req: Request, res: Response) {
-    const token = req.cookies?.refreshToken;
-    if (!token) {
-        throw new AppError(401, 'no_refresh_token', 'No refresh token provided.');
-    }
-
-    const { accessToken } = await refreshUserSession(token);
-
-    res.json({ accessToken });
+  const token = req.cookies?.refreshToken;
+  if (!token) throw new AppError(401, 'no_refresh_token', 'No refresh token provided.');
+  const { accessToken } = await refreshUserSession(token);
+  res.json({ accessToken });
 }
 
 export async function logout(_req: Request, res: Response) {
     res.clearCookie('refreshToken', {
         httpOnly: true,
-        secure: env.nodeEnv === 'production',
+        secure: isProd,
         sameSite: 'lax',
+        ...(isProd && env.cookieDomain ? { domain: env.cookieDomain } : {}),
     });
 
     const result = await logoutUser();
@@ -58,24 +57,20 @@ export async function logout(_req: Request, res: Response) {
 }
 
 export async function me(req: Request, res: Response) {
-    const user = await UserModel.findById(req.user!.sub).select('email role teamRole status companyId createdAt');
-    res.json({ user });
+  const user = await UserModel.findById(req.user!.sub).select('email role teamRole status companyId createdAt');
+  res.json({ user });
 }
 
 export async function forgotPassword(req: Request, res: Response) {
-    const result = forgotPasswordSchema.safeParse(req.body);
-    if (!result.success) {
-        throw new AppError(400, 'invalid_input', 'Invalid data.');
-    }
-    await requestPasswordReset(result.data.email, result.data.locale);
-    res.json({ message: 'If an account exists, an email has been sent.' });
+  const result = forgotPasswordSchema.safeParse(req.body);
+  if (!result.success) throw new AppError(400, 'invalid_input', 'Invalid data.');
+  await requestPasswordReset(result.data.email, result.data.locale);
+  res.json({ message: 'If an account exists, an email has been sent.' });
 }
 
 export async function resetPasswordController(req: Request, res: Response) {
-    const result = resetPasswordSchema.safeParse(req.body);
-    if (!result.success) {
-        throw new AppError(400, 'invalid_input', result.error.issues[0]?.message ?? 'Invalid data.');
-    }
-    await resetPassword(result.data.token, result.data.password);
-    res.json({ message: 'Password reset.' });
+  const result = resetPasswordSchema.safeParse(req.body);
+  if (!result.success) throw new AppError(400, 'invalid_input', result.error.issues[0]?.message ?? 'Invalid data.');
+  await resetPassword(result.data.token, result.data.password);
+  res.json({ message: 'Password reset.' });
 }
