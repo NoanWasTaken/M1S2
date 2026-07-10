@@ -2,9 +2,7 @@ import 'dotenv/config';
 
 function required(name: string): string {
   const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing environment variable: ${name}`);
-  }
+  if (!value) throw new Error(`Missing environment variable: ${name}`);
   return value;
 }
 
@@ -17,6 +15,7 @@ export const env = {
   jwtAccessSecret: required('JWT_ACCESS_SECRET'),
   jwtRefreshSecret: required('JWT_REFRESH_SECRET'),
   resendApiKey: required('RESEND_API_KEY'),
-  mailFrom: process.env.MAIL_FROM ?? 'onboarding@resend.dev',
+  mailFrom: process.env.MAIL_FROM ?? 'onboarding@noandelatouche.dev',
   appWebUrl: process.env.APP_WEB_URL ?? 'http://localhost:3000',
+  cookieDomain: process.env.COOKIE_DOMAIN as string | undefined,
 };

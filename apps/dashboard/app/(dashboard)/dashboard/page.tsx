@@ -13,7 +13,7 @@ import { WidgetGrid, type WidgetDef } from '@/components/dashboard/widget-grid';
 import { WidgetRenderer } from '@/components/dashboard/widget';
 import { fetchDashboardData, mockDashboardData, type DashboardData } from '@/lib/dashboard-api';
 import { api } from '@/lib/api-client';
-import { useDashboardSocket } from '@/lib/dashboard-socket';
+import { useDashboardStream as useDashboardSocket } from '@/lib/dashboard-stream';
 
 
 const COLUMNS = 12;
