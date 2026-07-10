@@ -7,12 +7,13 @@ import { useTranslations } from 'next-intl';
 import { useAuth } from '@/providers/auth-provider';
 import { useApplications } from '@/providers/application-provider';
 
-const navItems = [
+const navItems = (role: string | undefined) => [
   { href: '/dashboard', key: 'overview', icon: 'overview' },
   { href: '/pages', key: 'pages', icon: 'pages' },
   { href: '/events', key: 'events', icon: 'events' },
   { href: '/tracking/tags', key: 'tags', icon: 'tags' },
   { href: '/tracking/funnels', key: 'funnels', icon: 'funnels' },
+  { href: role === 'admin' ? '/admin/support' : '/support', key: 'support', icon: 'support' },
   { href: '/settings', key: 'settings', icon: 'settings' },
 ];
 
@@ -43,6 +44,11 @@ const iconMap: Record<string, React.ReactNode> = {
     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M4 4h16l-6 7v5l-4 3V11L4 4z" />
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 12h6" />
+    </svg>
+  ),
+  support: (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
     </svg>
   ),
   settings: (
@@ -117,7 +123,7 @@ function SiteSelector() {
 export function Sidebar() {
   const pathname = usePathname();
   const tNav = useTranslations('nav');
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
 
   return (
     <aside className="flex w-72 flex-col border-r border-border-subtle bg-[var(--bg-sidebar)]">
@@ -134,7 +140,7 @@ export function Sidebar() {
         <SiteSelector />
 
         <nav className="flex flex-col gap-1">
-          {navItems.map((item) => {
+          {navItems(user?.role).map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link

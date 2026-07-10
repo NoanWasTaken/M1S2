@@ -8,6 +8,7 @@ export default [
   {
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'no-empty': ['error', { allowEmptyCatch: true }],
     },
   },
 ];
