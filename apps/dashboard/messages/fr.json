@@ -83,7 +83,9 @@
     "funnels": "Conversion funnels",
     "settings": "Paramètres",
     "liveActive": "Temps réel actif",
-    "logout": "Déconnexion"
+    "logout": "Déconnexion",
+    "noSite": "Aucun site",
+    "noAppCreate": "Créer une application"
   },
   "tracking": {
     "tagsTitle": "Tracking tags",

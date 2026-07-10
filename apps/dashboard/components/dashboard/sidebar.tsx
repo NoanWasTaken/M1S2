@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/providers/auth-provider';
+import { useApplications } from '@/providers/application-provider';
 
 const navItems = [
   { href: '/dashboard', key: 'overview', icon: 'overview' },
@@ -51,10 +53,70 @@ const iconMap: Record<string, React.ReactNode> = {
   ),
 };
 
+function SiteSelector() {
+  const t = useTranslations('nav');
+  const { applications, selectedApp, setSelectedAppId } = useApplications();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between rounded-lg border border-border-subtle bg-bg-card px-3.5 py-2.5 text-sm text-text-primary"
+      >
+        <span className="truncate">{selectedApp?.name ?? t('noSite')}</span>
+        <svg className="h-4 w-4 shrink-0 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <>
+          {/* click-away backdrop */}
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 right-0 z-20 mt-1 max-h-64 overflow-auto rounded-lg border border-border-subtle bg-bg-card p-1 shadow-lg">
+            {applications.length === 0 ? (
+              <Link
+                href="/settings"
+                onClick={() => setOpen(false)}
+                className="block rounded-md px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover hover:text-text-primary"
+              >
+                {t('noAppCreate')}
+              </Link>
+            ) : (
+              applications.map((app) => (
+                <button
+                  key={app._id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedAppId(app.appId);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors ${selectedApp?.appId === app.appId
+                      ? 'bg-bg-active text-accent'
+                      : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary'
+                    }`}
+                >
+                  <span className="truncate">{app.name}</span>
+                  {selectedApp?.appId === app.appId && (
+                    <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+              ))
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function Sidebar() {
   const pathname = usePathname();
   const tNav = useTranslations('nav');
-  const tCommon = useTranslations('common');
   const { logout } = useAuth();
 
   return (
@@ -66,18 +128,10 @@ export function Sidebar() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             </svg>
           </div>
-          <span className="text-base font-bold text-text-primary">{tCommon('appName')}</span>
+          <span className="text-base font-bold text-text-primary">{useTranslations('common')('appName')}</span>
         </div>
 
-        <button
-          type="button"
-          className="flex w-full items-center justify-between rounded-lg border border-border-subtle bg-bg-card px-3.5 py-2.5 text-sm text-text-primary"
-        >
-          <span>monsite.fr</span>
-          <svg className="h-4 w-4 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
+        <SiteSelector />
 
         <nav className="flex flex-col gap-1">
           {navItems.map((item) => {

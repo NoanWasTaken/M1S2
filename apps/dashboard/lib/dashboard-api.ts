@@ -56,8 +56,8 @@ export const mockDashboardData: DashboardData = {
     activePages: [],
 };
 
-export async function fetchDashboardData(period: string): Promise<DashboardData> {
-    const res = await api.get<OverviewResponse>('/api/v1/dashboard/overview', { params: { period } });
+export async function fetchDashboardData(period: string, appId?: string): Promise<DashboardData> {
+    const res = await api.get<OverviewResponse>('/api/v1/dashboard/overview', { params: { period, appId } });
     const d = res.data;
     return {
         kpi: toKpiCards(d.kpis),

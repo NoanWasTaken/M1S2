@@ -82,7 +82,9 @@
     "funnels": "Conversion funnels",
     "settings": "Settings",
     "liveActive": "Live active",
-    "logout": "Logout"
+    "logout": "Logout",
+    "noSite": "No site",
+    "noAppCreate": "Create an application"
   },
   "tracking": {
     "tagsTitle": "Tracking tags",

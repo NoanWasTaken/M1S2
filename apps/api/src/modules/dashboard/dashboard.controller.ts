@@ -14,6 +14,6 @@ export async function overview(req: Request, res: Response) {
     throw new AppError(403, 'no_company', 'User has no associated company.');
   }
 
-  const data = await getOverviewData(companyId, result.data.period);
+  const data = await getOverviewData(companyId, result.data.period, result.data.appId);
   res.json(data);
 }

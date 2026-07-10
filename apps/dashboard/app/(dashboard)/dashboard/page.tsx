@@ -14,7 +14,7 @@ import { WidgetRenderer } from '@/components/dashboard/widget';
 import { fetchDashboardData, mockDashboardData, type DashboardData } from '@/lib/dashboard-api';
 import { api } from '@/lib/api-client';
 import { useDashboardStream as useDashboardSocket } from '@/lib/dashboard-stream';
-
+import { useApplications } from '@/providers/application-provider';
 
 const COLUMNS = 12;
 
@@ -161,6 +161,7 @@ const defaultWidgets: WidgetDef[] = [
 ];
 
 export default function OverviewPage() {
+  const { selectedAppId } = useApplications();
   const [widgets, setWidgets] = useState<WidgetDef[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [period, setPeriod] = useState('24h');
@@ -181,16 +182,16 @@ export default function OverviewPage() {
 
   // Load real dashboard data whenever the period changes
   useEffect(() => {
-    fetchDashboardData(period)
+    fetchDashboardData(period, selectedAppId ?? undefined)
       .then(setData)
-      .catch(() => setData(mockDashboardData)); // fallback dev
-  }, [period]);
+      .catch(() => setData(mockDashboardData));
+  }, [period, selectedAppId]);
 
   const dataSources = useMemo(() => buildDataSources(data), [data]);
 
   const { activeVisitors } = useDashboardSocket({
     onUpdate: () => {
-      fetchDashboardData(period).then(setData).catch(() => { });
+      fetchDashboardData(period, selectedAppId ?? undefined).then(setData).catch(() => { });
     },
   });
 
