@@ -197,3 +197,12 @@ export function broadcastWidgetUpdate(
       computedAt: new Date().toISOString(),
     });
 }
+
+export function broadcastDashboardUpdate(
+  accountId: string,
+  payload: { accountId: string; activeVisitors: number; computedAt: string },
+): void {
+  getIO()
+    .to(Rooms.account(accountId))
+    .emit("dashboard:update", payload);
+}

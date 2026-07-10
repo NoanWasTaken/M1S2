@@ -19,7 +19,7 @@ const periodKeyMap: Record<string, 'period24h' | 'period7d' | 'period30d' | 'per
 };
 
 export function Header({
-  activeVisitors = 327,
+  activeVisitors = 0,
   isEditing,
   onToggleEdit,
   period = '24h',

@@ -20,6 +20,7 @@ type OverviewResponse = {
     topPages: { rank: number; name: string; path: string; views: number; avgDuration: string }[];
     sources: { label: string; value: number; color: string }[];
     devices: { label: string; percentage: number; icon: string }[];
+    activePages: { path: string; visitors: number }[];
 };
 
 function compact(n: number): string {
@@ -43,6 +44,7 @@ export type DashboardData = {
     topPages: typeof mockTopPages;
     sources: typeof mockSources;
     devices: typeof mockDevices;
+    activePages: { path: string; visitors: number }[];
 };
 
 export const mockDashboardData: DashboardData = {
@@ -51,6 +53,7 @@ export const mockDashboardData: DashboardData = {
     topPages: mockTopPages,
     sources: mockSources,
     devices: mockDevices,
+    activePages: [],
 };
 
 export async function fetchDashboardData(period: string): Promise<DashboardData> {
@@ -62,5 +65,6 @@ export async function fetchDashboardData(period: string): Promise<DashboardData>
         topPages: d.topPages as unknown as typeof mockTopPages,
         sources: d.sources,
         devices: d.devices,
+        activePages: d.activePages ?? [],
     };
 }

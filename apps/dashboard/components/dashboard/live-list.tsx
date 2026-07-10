@@ -14,6 +14,19 @@ type LiveListProps = {
 
 export function LiveList({ data }: LiveListProps) {
   const t = useTranslations('dashboard');
+  if (data.length === 0) {
+    return (
+      <Card className="flex flex-col gap-4">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2 w-2">
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-text-tertiary" />
+          </span>
+          <h3 className="text-sm font-semibold text-text-primary">{t('activePages')}</h3>
+        </div>
+        <p className="text-sm text-text-secondary">{t('noActivePages')}</p>
+      </Card>
+    );
+  }
   const maxVisitors = Math.max(...data.map((d) => d.visitors));
 
   return (
