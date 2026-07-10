@@ -10,3 +10,4 @@ coverage/
 */package-lock.json
 .vscode
 package-lock.json
+codebase-apps-packages.txt
