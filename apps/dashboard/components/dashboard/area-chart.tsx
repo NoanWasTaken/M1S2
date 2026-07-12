@@ -42,7 +42,7 @@ export function AreaChart({ data }: AreaChartProps) {
         </div>
       </div>
 
-      <div className="h-64 w-full">
+      <div className="h-48 w-full lg:h-64">
         <ResponsiveContainer width="100%" height="100%">
           <RechartsAreaChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
             <defs>

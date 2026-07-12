@@ -1,21 +1,40 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/providers/auth-provider';
 import { useApplications } from '@/providers/application-provider';
 
-const navItems = (role: string | undefined) => [
-  { href: '/dashboard', key: 'overview', icon: 'overview' },
-  { href: '/pages', key: 'pages', icon: 'pages' },
-  { href: '/events', key: 'events', icon: 'events' },
-  { href: '/tracking/tags', key: 'tags', icon: 'tags' },
-  { href: '/tracking/funnels', key: 'funnels', icon: 'funnels' },
-  { href: role === 'admin' ? '/admin/support' : '/support', key: 'support', icon: 'support' },
-  { href: '/settings', key: 'settings', icon: 'settings' },
-];
+type NavItem = { href: string; key: string; icon: string };
+
+function navItems(role: string | undefined, isMember: boolean): NavItem[] {
+  if (role === 'admin') {
+    return [
+      { href: '/admin/companies', key: 'companies', icon: 'pages' },
+      { href: '/admin/users', key: 'users', icon: 'events' },
+      { href: '/admin/stats', key: 'stats', icon: 'overview' },
+      { href: '/admin/support', key: 'support', icon: 'support' },
+    ];
+  }
+
+  const items: NavItem[] = [
+    { href: '/dashboard', key: 'overview', icon: 'overview' },
+    { href: '/pages', key: 'pages', icon: 'pages' },
+    { href: '/events', key: 'events', icon: 'events' },
+    { href: '/tracking/tags', key: 'tags', icon: 'tags' },
+    { href: '/tracking/funnels', key: 'funnels', icon: 'funnels' },
+    { href: '/support', key: 'support', icon: 'support' },
+  ];
+
+  if (!isMember) {
+    items.push({ href: '/team', key: 'team', icon: 'team' });
+  }
+
+  items.push({ href: '/settings', key: 'settings', icon: 'settings' });
+  return items;
+}
 
 const iconMap: Record<string, React.ReactNode> = {
   overview: (
@@ -51,6 +70,11 @@ const iconMap: Record<string, React.ReactNode> = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
     </svg>
   ),
+  team: (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  ),
   settings: (
     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -79,7 +103,6 @@ function SiteSelector() {
 
       {open && (
         <>
-          {/* click-away backdrop */}
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div className="absolute left-0 right-0 z-20 mt-1 max-h-64 overflow-auto rounded-lg border border-border-subtle bg-bg-card p-1 shadow-lg">
             {applications.length === 0 ? (
@@ -100,8 +123,8 @@ function SiteSelector() {
                     setOpen(false);
                   }}
                   className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors ${selectedApp?.appId === app.appId
-                      ? 'bg-bg-active text-accent'
-                      : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary'
+                    ? 'bg-bg-active text-accent'
+                    : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary'
                     }`}
                 >
                   <span className="truncate">{app.name}</span>
@@ -120,13 +143,22 @@ function SiteSelector() {
   );
 }
 
-export function Sidebar() {
-  const pathname = usePathname();
+function SidebarContent({
+  pathname,
+  onNavigate,
+}: {
+  pathname: string;
+  onNavigate?: () => void;
+}) {
   const tNav = useTranslations('nav');
+  const tCommon = useTranslations('common');
   const { user, logout } = useAuth();
 
+  const isAdmin = user?.role === 'admin';
+  const isMember = user?.role === 'webmaster' && user?.teamRole === 'member';
+
   return (
-    <aside className="flex w-72 flex-col border-r border-border-subtle bg-[var(--bg-sidebar)]">
+    <>
       <div className="flex flex-col gap-6 p-5">
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
@@ -134,21 +166,22 @@ export function Sidebar() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             </svg>
           </div>
-          <span className="text-base font-bold text-text-primary">{useTranslations('common')('appName')}</span>
+          <span className="text-base font-bold text-text-primary">{tCommon('appName')}</span>
         </div>
 
-        <SiteSelector />
+        {!isAdmin && <SiteSelector />}
 
         <nav className="flex flex-col gap-1">
-          {navItems(user?.role).map((item) => {
+          {navItems(user?.role, isMember).map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={onNavigate}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${isActive
-                    ? 'bg-bg-active text-accent'
-                    : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary'
+                  ? 'bg-bg-active text-accent'
+                  : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary'
                   }`}
               >
                 {iconMap[item.icon]}
@@ -179,6 +212,68 @@ export function Sidebar() {
           <span className="font-medium">{tNav('logout')}</span>
         </button>
       </div>
-    </aside>
+    </>
+  );
+}
+
+export function Sidebar() {
+  const pathname = usePathname();
+  const tCommon = useTranslations('common');
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  return (
+    <>
+      <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-border-subtle bg-[var(--bg-sidebar)] px-4 lg:hidden">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-subtle text-text-primary transition-colors hover:bg-bg-hover"
+          aria-label={tCommon('menu')}
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <span className="text-sm font-bold text-text-primary">{tCommon('appName')}</span>
+      </header>
+
+      {open && (
+        <button
+          type="button"
+          aria-label={tCommon('close')}
+          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-border-subtle bg-[var(--bg-sidebar)] transition-transform duration-300 ease-in-out lg:static lg:z-auto lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'
+          }`}
+      >
+        <div className="flex items-center justify-end border-b border-border-subtle p-3 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
+            aria-label={tCommon('close')}
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <SidebarContent pathname={pathname} onNavigate={() => setOpen(false)} />
+      </aside>
+    </>
   );
 }

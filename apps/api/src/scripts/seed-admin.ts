@@ -10,7 +10,6 @@ async function seedAdmin() {
 
     await mongoose.connect(env.mongoUri);
 
-    // Do not recreate the admin if it already exists
     const existing = await UserModel.findOne({ email });
     if (existing) {
         console.log(`Admin already exists: ${email}`);
@@ -18,7 +17,6 @@ async function seedAdmin() {
         return;
     }
 
-    // Hash the password (like during registration)
     const passwordHash = await argon2.hash(password);
 
     await UserModel.create({

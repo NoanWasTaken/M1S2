@@ -11,14 +11,16 @@ type Props = {
   messages: Message[];
   onNewMessage: (msg: Message) => void;
   typingUserId: string | null;
-  onClose: () => void;
+  onClose?: () => void;
+  onBack?: () => void;
   onAccept?: () => void;
   status: string;
   canAccept?: boolean;
 };
 
-export function ConversationThread({ conversationId, messages, onNewMessage, typingUserId, onClose, onAccept, status, canAccept }: Props) {
+export function ConversationThread({ conversationId, messages, onNewMessage, typingUserId, onClose, onBack, onAccept, status, canAccept }: Props) {
   const t = useTranslations('support');
+  const tCommon = useTranslations('common');
   const { user } = useAuth();
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -65,9 +67,23 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
-        <span className="text-sm font-semibold text-text-primary">
-          {t(status)}
-        </span>
+        <div className="flex items-center gap-2">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary lg:hidden"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              {tCommon('back')}
+            </button>
+          )}
+          <span className="text-sm font-semibold text-text-primary">
+            {t(status)}
+          </span>
+        </div>
         <div className="flex items-center gap-2">
           {canAccept && status === 'waiting' && onAccept && (
             <button
@@ -78,7 +94,7 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
               {t('accept')}
             </button>
           )}
-          {status !== 'closed' && (
+          {status !== 'closed' && onClose && (
             <button
               type="button"
               onClick={onClose}
@@ -103,21 +119,20 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
               className={`mb-3 flex ${mine ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[75%] rounded-xl px-3.5 py-2 ${
-                  msg.type === 'system'
+                className={`max-w-[75%] rounded-xl px-3.5 py-2 ${msg.type === 'system'
                     ? 'mx-auto w-full max-w-xs bg-bg-sidebar text-center text-xs text-text-tertiary'
                     : mine
                       ? 'bg-accent text-[#05070d]'
                       : 'bg-bg-card text-text-primary'
-                }`}
+                  }`}
               >
                 {msg.type !== 'system' && (
                   <p className="mb-0.5 text-[11px] font-medium opacity-70">
                     {msg.senderRole === 'admin'
-                      ? 'Support'
+                      ? t('senderSupport')
                       : user?.role === 'admin'
-                        ? 'Client'
-                        : 'Vous'}
+                        ? t('senderClient')
+                        : t('senderYou')}
                   </p>
                 )}
                 <p className="text-sm leading-relaxed">{msg.content}</p>

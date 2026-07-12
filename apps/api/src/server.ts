@@ -19,6 +19,7 @@ import cookieParser from 'cookie-parser';
 import sseRouter from './realtime/sse.route.js';
 import { startHeartbeat } from './realtime/sse-registry.js';
 
+
 async function start() {
   await connectToDatabase(env.mongoUri);
 
@@ -51,9 +52,7 @@ async function start() {
 
   startHeartbeat();
 
-  app.listen(env.port, () => {
-    console.log(`API ready on http://localhost:${env.port}`);
-  });
+  app.listen(env.port);
 }
 
 start();

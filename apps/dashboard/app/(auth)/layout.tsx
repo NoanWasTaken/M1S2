@@ -10,7 +10,7 @@ export default function AuthLayout({
       <div className="absolute right-4 top-4">
         <LanguageSelector />
       </div>
-      <div className="w-full max-w-md">{children}</div>
+      <div className="w-full max-w-md page-enter-auth">{children}</div>
     </div>
   );
 }

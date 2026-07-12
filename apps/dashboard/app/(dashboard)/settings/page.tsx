@@ -77,24 +77,42 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
     );
 }
 
-// ---- Account ----
+function accountStatusLabel(status: string, t: ReturnType<typeof useTranslations<'settings'>>): string {
+    if (status === 'active') return t('accountActive');
+    if (status === 'pending') return t('accountStatus_pending');
+    if (status === 'suspended') return t('accountStatus_suspended');
+    return status;
+}
+
 function AccountCard({ me }: { me: Me }) {
     const t = useTranslations('settings');
+
+    const displayedRole =
+        me.role === 'admin'
+            ? t('roleAdmin')
+            : me.teamRole === 'member'
+                ? t('teamMember')
+                : t('roleWebmaster');
+
     return (
         <Card className="flex flex-col gap-4">
             <h2 className="text-sm font-semibold text-text-primary">{t('accountTitle')}</h2>
             <div className="grid grid-cols-2 gap-4">
                 <Field label={t('email')} value={me.email} />
-                <Field label={t('role')} value={me.role === 'webmaster' ? t('roleWebmaster') : me.role} />
-                <Field label={t('teamRole')} value={me.teamRole === 'owner' ? t('teamOwner') : t('teamMember')} />
-                <Field label={t('accountStatus')} value={me.status === 'active' ? t('accountActive') : me.status} />
+                <Field label={t('role')} value={displayedRole} />
+                {me.role !== 'admin' && (
+                    <Field
+                        label={t('teamRole')}
+                        value={me.teamRole === 'member' ? t('teamMember') : t('teamOwner')}
+                    />
+                )}
+                <Field label={t('accountStatus')} value={accountStatusLabel(me.status, t)} />
                 <Field label={t('memberSince')} value={formatDate(me.createdAt)} />
             </div>
         </Card>
     );
 }
 
-// ---- Company ----
 function CompanyCard({ company }: { company: Company }) {
     const t = useTranslations('settings');
     return (
@@ -122,8 +140,7 @@ function CompanyCard({ company }: { company: Company }) {
     );
 }
 
-// ---- One application row ----
-function ApplicationRow({ app, onChanged }: { app: App; onChanged: () => void }) {
+function ApplicationRow({ app, onChanged, readOnly }: { app: App; onChanged: () => void; readOnly?: boolean }) {
     const t = useTranslations('settings');
     const [revealedSecret, setRevealedSecret] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
@@ -172,9 +189,8 @@ function ApplicationRow({ app, onChanged }: { app: App; onChanged: () => void })
                 <span className="text-xs text-text-tertiary">{t('createdOn')} {formatDate(app.createdAt)}</span>
             </div>
 
-            {/* APP_ID */}
             <div className="flex flex-col gap-1">
-                <span className="text-xs uppercase tracking-wider text-text-secondary">APP_ID</span>
+                <span className="text-xs uppercase tracking-wider text-text-secondary">{t('appIdLabel')}</span>
                 <div className="flex items-center gap-2">
                     <code className="flex-1 truncate rounded-md bg-bg-card px-2 py-1.5 font-mono text-xs text-text-primary">
                         {app.appId}
@@ -183,10 +199,17 @@ function ApplicationRow({ app, onChanged }: { app: App; onChanged: () => void })
                 </div>
             </div>
 
-            {/* APP_SECRET */}
             <div className="flex flex-col gap-2">
-                <span className="text-xs uppercase tracking-wider text-text-secondary">APP_SECRET</span>
-                {revealedSecret ? (
+                <span className="text-xs uppercase tracking-wider text-text-secondary">{t('appSecretLabel')}</span>
+                {readOnly ? (
+                    app.appSecretPrefix ? (
+                        <code className="w-fit rounded-md bg-bg-card px-2 py-1.5 font-mono text-xs text-text-secondary">
+                            {app.appSecretPrefix}••••••••••••••••
+                        </code>
+                    ) : (
+                        <span className="text-xs text-text-tertiary">{t('noSecret')}</span>
+                    )
+                ) : revealedSecret ? (
                     <div className="flex flex-col gap-2 rounded-md border border-warning/40 bg-warning/10 p-2">
                         <p className="text-xs text-warning">{t('secretOnce')}</p>
                         <div className="flex items-center gap-2">
@@ -235,9 +258,22 @@ function ApplicationRow({ app, onChanged }: { app: App; onChanged: () => void })
                 )}
             </div>
 
-            {/* CORS origins */}
             <div className="flex flex-col gap-2">
                 <span className="text-xs uppercase tracking-wider text-text-secondary">{t('allowedOrigins')}</span>
+                {readOnly ? (
+                    origins.length > 0 ? (
+                        <div className="flex flex-col gap-1">
+                            {origins.map((o) => (
+                                <code key={o} className="rounded-md bg-bg-card px-2 py-1.5 font-mono text-xs text-text-primary">
+                                    {o}
+                                </code>
+                            ))}
+                        </div>
+                    ) : (
+                        <span className="text-xs text-text-tertiary">{t('noOrigin')}</span>
+                    )
+                ) : (
+                    <>
                 {origins.length > 0 ? (
                     <div className="flex flex-col gap-1">
                         {origins.map((o) => (
@@ -261,7 +297,7 @@ function ApplicationRow({ app, onChanged }: { app: App; onChanged: () => void })
                     <input
                         value={newOrigin}
                         onChange={(e) => setNewOrigin(e.target.value)}
-                        placeholder="https://monsite.fr"
+                        placeholder={t('originPlaceholder')}
                         className="flex-1 rounded-md border border-border-subtle bg-bg-card px-2 py-1.5 text-xs text-text-primary placeholder:text-text-tertiary focus:border-accent focus:outline-none"
                     />
                     <button
@@ -279,13 +315,14 @@ function ApplicationRow({ app, onChanged }: { app: App; onChanged: () => void })
                     </button>
                 </div>
                 {savedOrigins && <span className="text-xs text-success">{t('originsSaved')}</span>}
+                    </>
+                )}
             </div>
         </div>
     );
 }
 
-// ---- Applications section ----
-function ApplicationsSection({ apps, onChanged }: { apps: App[]; onChanged: () => void }) {
+function ApplicationsSection({ apps, onChanged, readOnly }: { apps: App[]; onChanged: () => void; readOnly?: boolean }) {
     const t = useTranslations('settings');
     const [newName, setNewName] = useState('');
     const [creating, setCreating] = useState(false);
@@ -307,6 +344,7 @@ function ApplicationsSection({ apps, onChanged }: { apps: App[]; onChanged: () =
         <Card className="flex flex-col gap-4">
             <h2 className="text-sm font-semibold text-text-primary">{t('applicationsTitle')}</h2>
 
+            {!readOnly && (
             <div className="flex items-center gap-2">
                 <input
                     value={newName}
@@ -323,13 +361,14 @@ function ApplicationsSection({ apps, onChanged }: { apps: App[]; onChanged: () =
                     {t('create')}
                 </button>
             </div>
+            )}
 
             {apps.length === 0 ? (
                 <p className="text-sm text-text-secondary">{t('noApp')}</p>
             ) : (
                 <div className="flex flex-col gap-3">
                     {apps.map((app) => (
-                        <ApplicationRow key={app._id} app={app} onChanged={onChanged} />
+                        <ApplicationRow key={app._id} app={app} onChanged={onChanged} readOnly={readOnly} />
                     ))}
                 </div>
             )}
@@ -356,6 +395,8 @@ export default function SettingsPage() {
         ]).finally(() => setLoading(false));
     }, []);
 
+    const isMember = me?.role === 'webmaster' && me?.teamRole === 'member';
+
     return (
         <div className="flex flex-col gap-6 p-6">
             <h1 className="text-xl font-semibold text-text-primary">{t('title')}</h1>
@@ -366,7 +407,7 @@ export default function SettingsPage() {
                 <>
                     {me && <AccountCard me={me} />}
                     {company && <CompanyCard company={company} />}
-                    <ApplicationsSection apps={apps} onChanged={loadApps} />
+                    <ApplicationsSection apps={apps} onChanged={loadApps} readOnly={isMember} />
                 </>
             )}
         </div>

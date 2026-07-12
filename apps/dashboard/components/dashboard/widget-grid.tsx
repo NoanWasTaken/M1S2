@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import GridLayout, { type Layout } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import { Card } from '@/components/ui/card';
@@ -22,6 +23,7 @@ const COLUMNS = 12;
 const ROW_HEIGHT = 100;
 
 export function WidgetGrid({ widgets, onLayoutChange, renderWidget }: WidgetGridProps) {
+  const t = useTranslations('dashboard');
   const layout = useMemo<Layout>(
     () =>
       widgets.map((w) => ({
@@ -52,7 +54,7 @@ export function WidgetGrid({ widgets, onLayoutChange, renderWidget }: WidgetGrid
   if (widgets.length === 0) {
     return (
       <Card className="flex items-center justify-center p-12">
-        <p className="text-sm text-text-secondary">Aucun widget configuré.</p>
+        <p className="text-sm text-text-secondary">{t('noWidgetsConfigured')}</p>
       </Card>
     );
   }

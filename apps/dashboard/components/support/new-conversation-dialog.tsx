@@ -2,15 +2,17 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { createConversation } from '@/lib/support-api';
+import { createConversation, createInternalConversation } from '@/lib/support-api';
 
 type Props = {
   onCreated: () => void;
   onCancel: () => void;
+  internal?: boolean;
 };
 
-export function NewConversationDialog({ onCreated, onCancel }: Props) {
+export function NewConversationDialog({ onCreated, onCancel, internal }: Props) {
   const t = useTranslations('support');
+  const tCommon = useTranslations('common');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -22,7 +24,11 @@ export function NewConversationDialog({ onCreated, onCancel }: Props) {
     setSending(true);
     setError('');
     try {
-      await createConversation(subject.trim(), message.trim());
+      if (internal) {
+        await createInternalConversation(subject.trim(), message.trim());
+      } else {
+        await createConversation(subject.trim(), message.trim());
+      }
       onCreated();
     } catch {
       setError(t('errorSending'));
@@ -34,7 +40,7 @@ export function NewConversationDialog({ onCreated, onCancel }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="w-full max-w-md rounded-xl border border-border-card bg-bg-card p-6">
-        <h2 className="mb-4 text-lg font-semibold text-text-primary">{t('newConversation')}</h2>
+        <h2 className="mb-4 text-lg font-semibold text-text-primary">{internal ? t('newInternalRequest') : t('newConversation')}</h2>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
@@ -79,7 +85,7 @@ export function NewConversationDialog({ onCreated, onCancel }: Props) {
               disabled={!subject.trim() || !message.trim() || sending}
               className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-[#05070d] transition-opacity disabled:opacity-40"
             >
-              {sending ? '...' : t('send')}
+              {sending ? tCommon('sending') : t('send')}
             </button>
           </div>
         </form>

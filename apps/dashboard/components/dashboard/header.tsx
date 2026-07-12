@@ -30,29 +30,29 @@ export function Header({
   const tCommon = useTranslations('common');
 
   return (
-    <header className="flex items-center justify-between border-b border-border-subtle bg-[var(--bg-page)] px-6 py-4">
-      <div className="flex items-center gap-2">
-        <h1 className="text-xl font-semibold text-text-primary">{tNav('overview')}</h1>
-        <span className="text-xl text-text-tertiary">/</span>
-        <span className="text-sm text-text-secondary">{tD('today')}</span>
+    <header className="flex flex-col gap-3 border-b border-border-subtle bg-[var(--bg-page)] px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-6 lg:py-4">
+      <div className="flex min-w-0 items-center gap-2">
+        <h1 className="truncate text-lg font-semibold text-text-primary lg:text-xl">{tNav('overview')}</h1>
+        <span className="shrink-0 text-lg text-text-tertiary lg:text-xl">/</span>
+        <span className="truncate text-sm text-text-secondary">{tD('today')}</span>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 rounded-lg border border-border-subtle bg-bg-card/50 px-3 py-1.5">
-          <span className="relative flex h-2 w-2">
+      <div className="flex flex-wrap items-center gap-2 lg:gap-4">
+        <div className="flex shrink-0 items-center gap-2 rounded-lg border border-border-subtle bg-bg-card/50 px-2.5 py-1.5 sm:px-3">
+          <span className="relative flex h-2 w-2 shrink-0">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
           </span>
           <span className="font-mono text-sm font-bold text-accent">
             {activeVisitors}
           </span>
-          <span className="text-xs text-text-secondary">{tD('activeVisitors')}</span>
+          <span className="hidden text-xs text-text-secondary sm:inline">{tD('activeVisitors')}</span>
         </div>
 
         <button
           type="button"
           onClick={onToggleEdit}
-          className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${isEditing
+          className={`hidden items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors lg:flex ${isEditing
               ? 'border-accent bg-accent text-[#05070d]'
               : 'border-border-subtle text-text-secondary hover:border-accent hover:text-accent'
             }`}
@@ -67,13 +67,13 @@ export function Header({
           )}
         </button>
 
-        <div className="flex items-center rounded-lg border border-border-subtle p-0.5">
+        <div className="flex shrink-0 items-center rounded-lg border border-border-subtle p-0.5">
           {['24h', '7d', '30d', '90d'].map((p) => (
             <button
               key={p}
               type="button"
               onClick={() => onPeriodChange?.(p)}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${period === p
+              className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors sm:px-3 ${period === p
                   ? 'bg-accent text-[#05070d]'
                   : 'text-text-secondary hover:text-text-primary'
                 }`}

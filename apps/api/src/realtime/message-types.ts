@@ -17,11 +17,9 @@ export interface ServerToClientEvents {
 
 
 export interface ClientToServerEvents {
-  //Dashboard
   "widget:subscribe": (widgetId: string) => void;
   "widget:unsubscribe": (widgetId: string) => void;
 
-  //Support
   "support:send-message": (payload: SendMessagePayload) => void;
   "support:typing-start": (conversationId: string) => void;
   "support:typing-stop": (conversationId: string) => void;
@@ -65,7 +63,7 @@ export interface WidgetUpdatePayload {
   widgetId: string;
   accountId: string;
   data: unknown;
-  computedAt: string; //ISO
+  computedAt: string;
 }
 
 export interface SupportMessagePayload {

@@ -1,7 +1,4 @@
-// Indexes that back the analytics aggregations.
-// Every dashboard/analytics pipeline starts with a $match on appId + occurredAt,
-// and many also filter by type. createIndex is idempotent: if Mongoose already
-// created the index under its default name, this is a no-op.
+// Analytics query indexes
 
 export const up = async (db) => {
     await db.collection('events').createIndex({ appId: 1, occurredAt: 1 });

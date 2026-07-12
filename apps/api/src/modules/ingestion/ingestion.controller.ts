@@ -10,7 +10,7 @@ export async function postBrowserEvents(req: Request, res: Response) {
     }
 
     const outcome = await ingestBrowserEvents(req.application!.appId, result.data);
-    res.status(202).json(outcome); // 202 = accepted
+    res.status(202).json(outcome);
 }
 
 export async function postServerEvents(req: Request, res: Response) {

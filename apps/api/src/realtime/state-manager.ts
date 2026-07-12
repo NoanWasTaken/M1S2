@@ -22,11 +22,6 @@ const TRANSITIONS: StateTransition[] = [
 
 export class ConnectionStateMachine {
   private state: ConnectionState = "connecting";
-  private readonly socketId: string;
-
-  constructor(socketId: string) {
-    this.socketId = socketId;
-  }
 
   get current(): ConnectionState {
     return this.state;
@@ -39,15 +34,9 @@ export class ConnectionStateMachine {
     });
 
     if (!valid) {
-      console.warn(
-        `[StateManager] Invalid transition ${this.state} → ${next} for socket ${this.socketId}`
-      );
       return false;
     }
 
-    console.debug(
-      `[StateManager] Socket ${this.socketId}: ${this.state} → ${next}`
-    );
     this.state = next;
     return true;
   }

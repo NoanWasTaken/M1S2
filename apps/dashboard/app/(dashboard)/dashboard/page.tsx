@@ -32,8 +32,7 @@ function colSpanClass(s: 'full' | 'two-thirds' | 'third') {
   return 'lg:col-span-1';
 }
 
-// Build the per-type data map from the real dashboard data.
-// live-list ("Pages actives") stays on mock until the realtime lot (LOT 8).
+// live-list: mock LOT8
 function buildDataSources(data: DashboardData): Record<string, unknown> {
   return {
     kpi: data.kpi,
@@ -126,7 +125,7 @@ function StaticWidget({
       return (
         <KpiGrid>
           {(data as DashboardData['kpi']).map((kpi) => (
-            <KpiCard key={kpi.id} {...kpi} />
+            <KpiCard key={kpi.id} id={kpi.id} value={kpi.value} delta={kpi.delta} ratio={kpi.ratio} />
           ))}
         </KpiGrid>
       );
@@ -164,10 +163,10 @@ export default function OverviewPage() {
   const { selectedAppId } = useApplications();
   const [widgets, setWidgets] = useState<WidgetDef[]>([]);
   const [isEditing, setIsEditing] = useState(false);
+  const [canEditLayout, setCanEditLayout] = useState(false);
   const [period, setPeriod] = useState('24h');
   const [data, setData] = useState<DashboardData>(mockDashboardData);
 
-  // Load widget layout
   useEffect(() => {
     api
       .get('/api/v1/dashboard/widgets')
@@ -180,7 +179,17 @@ export default function OverviewPage() {
       });
   }, []);
 
-  // Load real dashboard data whenever the period changes
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const update = () => {
+      setCanEditLayout(mq.matches);
+      if (!mq.matches) setIsEditing(false);
+    };
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
   useEffect(() => {
     fetchDashboardData(period, selectedAppId ?? undefined)
       .then(setData)
@@ -210,7 +219,7 @@ export default function OverviewPage() {
         activeVisitors={activeVisitors ?? 0}
       />
 
-      {isEditing ? (
+      {isEditing && canEditLayout ? (
         <div className="p-6">
           <WidgetGrid
             widgets={widgets}

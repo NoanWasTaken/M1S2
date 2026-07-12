@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-// A filter = restrict on a specific field
 export const filterSchema = z.object({
     field: z.enum(['type', 'url', 'payload.nature', 'payload.device', 'payload.referrerType']),
     value: z.string().min(1),

@@ -18,6 +18,7 @@ function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations('auth.resetPassword');
+  const tCommon = useTranslations('common');
   const token = searchParams.get('token') ?? '';
   const [apiError, setApiError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -85,14 +86,14 @@ function ResetPasswordForm() {
         name="password"
         label={t('newPassword')}
         type="password"
-        placeholder="••••••••"
+        placeholder={tCommon('passwordPlaceholder')}
       />
       <FormField
         control={form.control}
         name="confirm"
         label={t('confirmPassword')}
         type="password"
-        placeholder="••••••••"
+        placeholder={tCommon('passwordPlaceholder')}
       />
       <Button type="submit" className="w-full" size="lg" isLoading={form.formState.isSubmitting}>
         {t('resetPassword')}

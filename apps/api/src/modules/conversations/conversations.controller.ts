@@ -11,6 +11,7 @@ import {
   listConversations,
   getConversation,
   createConversation,
+  createInternalConversation,
   getMessages,
   sendMessage,
   updateConversationStatus,
@@ -24,6 +25,7 @@ function creator(req: Request) {
     userId: req.user!.sub,
     role: req.user!.role,
     companyId: req.user!.companyId,
+    teamRole: req.user!.teamRole,
   };
 }
 
@@ -49,6 +51,16 @@ export async function postConversation(req: Request, res: Response) {
   }
 
   const conversation = await createConversation(creator(req), result.data);
+  res.status(201).json({ conversation });
+}
+
+export async function postInternalConversation(req: Request, res: Response) {
+  const result = createConversationSchema.safeParse(req.body);
+  if (!result.success) {
+    throw new AppError(400, 'invalid_input', result.error.issues[0]?.message ?? 'Invalid data.');
+  }
+
+  const conversation = await createInternalConversation(creator(req), result.data);
   res.status(201).json({ conversation });
 }
 

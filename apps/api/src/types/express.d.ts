@@ -1,6 +1,5 @@
 import 'express';
 
-// Extend the Express Request interface to include the user object
 declare global {
     namespace Express {
         interface Request {
@@ -9,7 +8,7 @@ declare global {
                 role: 'admin' | 'webmaster';
                 companyId?: string;
                 teamRole?: 'owner' | 'member' | null;
-                impersonatedBy?: string; // admin id
+                impersonatedBy?: string;
             };
             application?: {
                 id: string;

@@ -1,7 +1,6 @@
-// Track the duration of the page being visible
 export class PageTimer {
-    private accumulated = 0; // seconds already accumulated
-    private lastResume: number | null = null; // last resume time
+    private accumulated = 0;
+    private lastResume: number | null = null;
 
     constructor() {
         if (document.visibilityState === 'visible') {

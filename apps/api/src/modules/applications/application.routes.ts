@@ -1,19 +1,20 @@
 import { Router } from 'express';
 import { authenticate } from '../../middlewares/authenticate.js';
 import { authorize } from '../../middlewares/authorize.js';
+import { denyMembers } from '../../middlewares/authorize-team.js';
 import { postApplication, getApplications, postApplicationSecret, deleteApplicationSecretController, putAllowedOrigins } from './application.controller.js';
 
 const router = Router();
 
-// Accessible to webmasters AND admins (connected)
+// Webmaster admin routes
 router.use(authenticate, authorize('webmaster', 'admin'));
 
-router.post('/', postApplication);
+router.post('/', denyMembers, postApplication);
 router.get('/', getApplications);
 
-router.post('/:id/secret', postApplicationSecret);
-router.delete('/:id/secret', deleteApplicationSecretController);
+router.post('/:id/secret', denyMembers, postApplicationSecret);
+router.delete('/:id/secret', denyMembers, deleteApplicationSecretController);
 
-router.put('/:id/origins', putAllowedOrigins);
+router.put('/:id/origins', denyMembers, putAllowedOrigins);
 
 export default router;

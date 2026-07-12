@@ -1,5 +1,3 @@
-// for handle errors
-
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/app-error.js';
 

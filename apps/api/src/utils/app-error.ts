@@ -1,5 +1,3 @@
-// for handle errors
-
 export class AppError extends Error {
     statusCode: number;
     code: string;

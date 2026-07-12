@@ -14,7 +14,7 @@ export type Application = {
 
 type ApplicationContextValue = {
     applications: Application[];
-    selectedAppId: string | null; // the appId (app_xxx)
+    selectedAppId: string | null;
     selectedApp: Application | null;
     setSelectedAppId: (appId: string | null) => void;
     refresh: () => Promise<void>;
@@ -44,7 +44,6 @@ export function ApplicationProvider({ children }: { children: React.ReactNode })
             if (appId) localStorage.setItem(STORAGE_KEY, appId);
             else localStorage.removeItem(STORAGE_KEY);
         } catch {
-            /* ignore */
         }
     }, []);
 

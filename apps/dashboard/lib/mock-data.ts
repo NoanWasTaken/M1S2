@@ -1,32 +1,8 @@
 export const kpiData = [
-  {
-    id: 'sessions',
-    label: 'SESSIONS',
-    value: '64.6K',
-    delta: 4.2,
-    subtext: 'vs. hier même heure',
-  },
-  {
-    id: 'pageViews',
-    label: 'PAGES VUES',
-    value: '117.8K',
-    delta: 6.8,
-    subtext: 'pages / session : 1.83',
-  },
-  {
-    id: 'bounceRate',
-    label: 'TAUX DE REBOND',
-    value: '39.2%',
-    delta: -1.4,
-    subtext: 'objectif : < 40%',
-  },
-  {
-    id: 'avgDuration',
-    label: 'DURÉE MOYENNE',
-    value: '2m 59s',
-    delta: 2.1,
-    subtext: 'par session',
-  },
+  { id: 'sessions' as const, value: '64.6K', delta: 4.2 },
+  { id: 'pageViews' as const, value: '117.8K', delta: 6.8, ratio: '1.83' },
+  { id: 'bounceRate' as const, value: '39.2%', delta: -1.4 },
+  { id: 'avgDuration' as const, value: '2m 59s', delta: 2.1 },
 ];
 
 export const trafficData = [
@@ -58,15 +34,15 @@ export const topPagesData = [
 ];
 
 export const trafficSourcesData = [
-  { label: 'Organique', value: 41, color: '#38bdf8' },
-  { label: 'Direct', value: 24, color: '#818cf8' },
-  { label: 'Social', value: 18, color: '#34d399' },
-  { label: 'Référents', value: 12, color: '#fb923c' },
-  { label: 'Email', value: 5, color: '#6b7280' },
+  { key: 'organic', value: 41, color: '#38bdf8' },
+  { key: 'direct', value: 24, color: '#818cf8' },
+  { key: 'social', value: 18, color: '#34d399' },
+  { key: 'referral', value: 12, color: '#fb923c' },
+  { key: 'email', value: 5, color: '#6b7280' },
 ];
 
 export const devicesData = [
-  { label: 'Desktop', percentage: 54, icon: 'desktop' },
-  { label: 'Mobile', percentage: 38, icon: 'mobile' },
-  { label: 'Tablette', percentage: 8, icon: 'tablet' },
+  { key: 'desktop', percentage: 54, icon: 'desktop' },
+  { key: 'mobile', percentage: 38, icon: 'mobile' },
+  { key: 'tablet', percentage: 8, icon: 'tablet' },
 ];
