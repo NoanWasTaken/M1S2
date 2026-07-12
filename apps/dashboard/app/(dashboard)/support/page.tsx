@@ -9,7 +9,7 @@ import { ConversationThread } from '@/components/support/conversation-thread';
 import { NewConversationDialog } from '@/components/support/new-conversation-dialog';
 import { SupportBadge } from '@/components/support/support-badge';
 import { fetchConversations, fetchMessages, closeConversation, getUnreadCount, type Conversation, type ConversationStatus, type Message } from '@/lib/support-api';
-import { useConversationStream, type SupportMessageEvent, type SupportPresenceEvent, type SupportTypingEvent } from '@/lib/use-conversation-stream';
+import { useConversationStream, type SupportCallSignalEvent, type SupportMessageEvent, type SupportPresenceEvent, type SupportTypingEvent } from '@/lib/use-conversation-stream';
 
 export default function SupportPage() {
   const t = useTranslations('support');
@@ -111,10 +111,18 @@ export default function SupportPage() {
     }
   }, [activeId, user?.id]);
 
+  const handleCallSignal = useCallback((payload: SupportCallSignalEvent) => {
+    if (payload.senderId === user?.id) return;
+    if (payload.conversationId === activeId) {
+      console.info('[support] call signal', payload.type, payload.payload);
+    }
+  }, [activeId, user?.id]);
+
   useConversationStream({
     onMessage: handleMessage,
     onPresence: handlePresence,
     onTyping: handleTyping,
+    onCallSignal: handleCallSignal,
   }, activeId || undefined);
 
   const handleSelect = async (id: string) => {
@@ -188,6 +196,9 @@ export default function SupportPage() {
               onBack={() => setActiveId(null)}
               onClose={isMember ? undefined : handleClose}
               status={activeConv.status}
+              onCallSignal={(signal) => {
+                void import('@/lib/support-api').then(({ sendCallSignal }) => sendCallSignal(activeConv._id, signal.type, signal.payload));
+              }}
             />
           ) : (
             <div className="hidden h-full items-center justify-center lg:flex">

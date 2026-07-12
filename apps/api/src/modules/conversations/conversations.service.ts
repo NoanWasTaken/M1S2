@@ -295,3 +295,19 @@ export async function sendTypingIndicator(
     isTyping,
   });
 }
+
+export async function sendCallSignal(
+  conversationId: string,
+  user: Creator,
+  data: { type: 'offer' | 'answer' | 'candidate' | 'state'; payload: unknown },
+) {
+  await getConversation(conversationId, user);
+
+  pushToRoom(`conversation:${conversationId}`, 'support:call-signal', {
+    conversationId,
+    senderId: user.userId,
+    senderRole: user.role,
+    type: data.type,
+    payload: data.payload,
+  });
+}

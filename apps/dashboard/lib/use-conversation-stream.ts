@@ -32,11 +32,20 @@ export type SupportNewConversationEvent = {
   subject: string;
 };
 
+export type SupportCallSignalEvent = {
+  conversationId: string;
+  senderId: string;
+  senderRole: 'webmaster' | 'admin';
+  type: 'offer' | 'answer' | 'candidate' | 'state';
+  payload: unknown;
+};
+
 type UseConversationStreamOptions = {
   onMessage?: (payload: SupportMessageEvent) => void;
   onPresence?: (payload: SupportPresenceEvent) => void;
   onTyping?: (payload: SupportTypingEvent) => void;
   onNewConversation?: (payload: SupportNewConversationEvent) => void;
+  onCallSignal?: (payload: SupportCallSignalEvent) => void;
 };
 
 function attachHandlers(es: EventSource, handlersRef: React.MutableRefObject<UseConversationStreamOptions>) {
@@ -73,6 +82,15 @@ function attachHandlers(es: EventSource, handlersRef: React.MutableRefObject<Use
       handlersRef.current.onNewConversation?.(payload);
     } catch {
       console.error('[SSE] Failed to parse support:new-conversation', e.data);
+    }
+  });
+
+  es.addEventListener('support:call-signal', (e: MessageEvent) => {
+    try {
+      const payload = JSON.parse(e.data) as SupportCallSignalEvent;
+      handlersRef.current.onCallSignal?.(payload);
+    } catch {
+      console.error('[SSE] Failed to parse support:call-signal', e.data);
     }
   });
 }

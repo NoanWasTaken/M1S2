@@ -110,3 +110,7 @@ export async function getUnreadCount() {
 export async function sendTyping(conversationId: string, isTyping: boolean) {
   await api.post(`/api/v1/conversations/${conversationId}/typing`, { isTyping });
 }
+
+export async function sendCallSignal(conversationId: string, type: 'offer' | 'answer' | 'candidate' | 'state', payload: unknown) {
+  await api.post(`/api/v1/conversations/${conversationId}/call/signal`, { type, payload });
+}

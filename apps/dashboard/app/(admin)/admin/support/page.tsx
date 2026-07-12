@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { ConversationList } from '@/components/support/conversation-list';
 import { ConversationThread } from '@/components/support/conversation-thread';
 import { fetchConversations, fetchMessages, acceptConversation, closeConversation, type Conversation, type ConversationStatus, type Message } from '@/lib/support-api';
-import { useConversationStream, type SupportMessageEvent, type SupportPresenceEvent, type SupportTypingEvent } from '@/lib/use-conversation-stream';
+import { useConversationStream, type SupportCallSignalEvent, type SupportMessageEvent, type SupportPresenceEvent, type SupportTypingEvent } from '@/lib/use-conversation-stream';
 
 export default function AdminSupportPage() {
   const t = useTranslations('support');
@@ -50,7 +50,7 @@ export default function AdminSupportPage() {
       setTypingUserId(null);
       fetchMessages(activeId)
         .then((data) => setMessages(data.messages))
-        .catch(() => {});
+        .catch(() => { });
     } else {
       setMessages([]);
     }
@@ -84,11 +84,18 @@ export default function AdminSupportPage() {
     }
   }, [activeId]);
 
+  const handleCallSignal = useCallback((payload: SupportCallSignalEvent) => {
+    if (payload.conversationId === activeId) {
+      console.info('[support] call signal', payload.type, payload.payload);
+    }
+  }, [activeId]);
+
   useConversationStream({
     onMessage: handleMessage,
     onPresence: handlePresence,
     onTyping: handleTyping,
     onNewConversation: load,
+    onCallSignal: handleCallSignal,
   }, activeId || undefined);
 
   const handleSelect = async (id: string) => {
@@ -154,6 +161,9 @@ export default function AdminSupportPage() {
             onAccept={handleAccept}
             status={activeConv.status}
             canAccept={activeConv.status === 'waiting'}
+            onCallSignal={(signal) => {
+              void import('@/lib/support-api').then(({ sendCallSignal }) => sendCallSignal(activeConv._id, signal.type, signal.payload));
+            }}
           />
         ) : (
           <div className="hidden h-full items-center justify-center lg:flex">
