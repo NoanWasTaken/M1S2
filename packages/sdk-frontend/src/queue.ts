@@ -6,7 +6,6 @@ export class EventQueue {
 
     constructor(private config: Required<SdkConfig>) { }
 
-    // Add event to queue
     add(event: TrackedEvent): void {
         this.queue.push(event);
 
@@ -15,30 +14,25 @@ export class EventQueue {
         }
     }
 
-    // Start periodic sending
     start(): void {
         this.timer = window.setInterval(() => this.flush(), this.config.flushIntervalMs);
-
-        // Send what remains when user leaves page
         window.addEventListener('pagehide', () => this.flush(true));
     }
 
-    // Send queue content
     private flush(useBeacon = false): void {
         if (this.queue.length === 0) return;
 
         const events = this.queue;
-        this.queue = []; // Empty immediately to avoid sending twice
+        this.queue = []; // Prevent double send
 
         const body = JSON.stringify({ events });
 
         if (useBeacon && navigator.sendBeacon) {
-            // When page closes : sendBeacon guarantees send
+            // sendBeacon on unload
             navigator.sendBeacon(this.config.endpoint, body);
             return;
         }
 
-        // Normal non blocking send
         fetch(this.config.endpoint, {
             method: 'POST',
             headers: {
@@ -46,9 +40,9 @@ export class EventQueue {
                 'x-app-id': this.config.appId,
             },
             body,
-            keepalive: true, // Allow request to survive page change
+            keepalive: true,
         }).catch(() => {
-            // Ignore network errors : tracking must never break site
+            // Never break host site
         });
     }
 }

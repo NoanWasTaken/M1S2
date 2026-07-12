@@ -1,7 +1,6 @@
 import type { PipelineStage } from 'mongoose';
 import type { AnalyticsQueryInput } from './analytics.schema.js';
 
-// Build the $match stage from the config
 function buildMatchStage(appId: string, query: AnalyticsQueryInput): PipelineStage.Match {
     const match: Record<string, unknown> = {
         appId,
@@ -11,7 +10,6 @@ function buildMatchStage(appId: string, query: AnalyticsQueryInput): PipelineSta
         },
     };
 
-    // Add each filter
     for (const filter of query.filters) {
         match[filter.field] = filter.value;
     }
@@ -19,24 +17,19 @@ function buildMatchStage(appId: string, query: AnalyticsQueryInput): PipelineSta
     return { $match: match };
 }
 
-// Build the $group stage from the metric
 function buildGroupStage(metric: AnalyticsQueryInput['metric']): PipelineStage.Group {
     switch (metric) {
         case 'event_count':
-            // Count events
             return { $group: { _id: null, value: { $sum: 1 } } };
 
         case 'unique_sessions':
-            // Count unique sessions
             return { $group: { _id: null, sessions: { $addToSet: '$sessionId' } } };
 
         case 'unique_visitors':
-            // Count unique visitors
             return { $group: { _id: null, visitors: { $addToSet: '$visitorId' } } };
     }
 }
 
-// The engine: transform a config
 export function buildKpiPipeline(appId: string, query: AnalyticsQueryInput): PipelineStage[] {
     const pipeline: PipelineStage[] = [
         buildMatchStage(appId, query),
@@ -54,11 +47,9 @@ export function buildKpiPipeline(appId: string, query: AnalyticsQueryInput): Pip
     return pipeline;
 }
 
-// Build a time series pipeline
 export function buildTimeSeriesPipeline(appId: string, query: AnalyticsQueryInput): PipelineStage[] {
     const step = query.step ?? 'day';
 
-    // Group stage
     let groupStage: PipelineStage.Group;
     if (query.metric === 'unique_sessions') {
         groupStage = {
@@ -83,7 +74,6 @@ export function buildTimeSeriesPipeline(appId: string, query: AnalyticsQueryInpu
         };
     }
 
-    // Project stage
     const projectStage: PipelineStage.Project = {
         $project: {
             _id: 0,

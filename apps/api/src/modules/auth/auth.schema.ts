@@ -1,5 +1,3 @@
-// for respect zod schema for register input
-
 import { z } from 'zod';
 
 export const registerSchema = z.object({
@@ -32,6 +30,11 @@ export const forgotPasswordSchema = z.object({
 });
 
 export const resetPasswordSchema = z.object({
+    token: z.string().min(1),
+    password: z.string().min(8, 'Le mot de passe doit faire au moins 8 caractères.'),
+});
+
+export const acceptInvitationSchema = z.object({
     token: z.string().min(1),
     password: z.string().min(8, 'Le mot de passe doit faire au moins 8 caractères.'),
 });

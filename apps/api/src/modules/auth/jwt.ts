@@ -2,11 +2,11 @@ import jwt from 'jsonwebtoken';
 import { env } from '../../config/env.js';
 
 export type TokenPayload = {
-    sub: string; // user id
+    sub: string;
     role: 'admin' | 'webmaster';
     companyId?: string;
     teamRole?: 'owner' | 'member' | null;
-    impersonatedBy?: string; // admin id
+    impersonatedBy?: string;
 };
 
 export function signAccessToken(payload: TokenPayload): string {

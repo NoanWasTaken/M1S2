@@ -6,7 +6,6 @@ import { authenticateServer } from '../../middlewares/authenticate-server.js';
 
 const router = Router();
 
-// At most 120 requests per minute and per IP on ingestion
 const ingestionLimiter = rateLimit({
     windowMs: 60 * 1000,
     limit: 120,

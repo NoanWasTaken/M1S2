@@ -9,7 +9,7 @@ type TopPageRow = {
   name: string;
   path: string;
   views: number;
-  evol?: number; // optional: the real API may not provide it
+  evol?: number;
   avgDuration: string;
 };
 
@@ -17,7 +17,6 @@ type DataTableProps = {
   data: TopPageRow[];
 };
 
-// 3 -> "3", 1200 -> "1.2K", 18400 -> "18.4K"
 function formatViews(views: number): string {
   if (views >= 1000) return `${(views / 1000).toFixed(1)}K`;
   return String(views);
@@ -25,11 +24,13 @@ function formatViews(views: number): string {
 
 export function DataTable({ data }: DataTableProps) {
   const t = useTranslations('dashboard');
+  const tCommon = useTranslations('common');
   return (
     <Card className="flex flex-col gap-4">
       <h3 className="text-sm font-semibold text-text-primary">{t('topPages')}</h3>
 
-      <table className="w-full text-sm">
+      <div className="overflow-x-auto">
+      <table className="w-full min-w-[560px] text-sm">
         <thead>
           <tr className="text-xs font-medium uppercase tracking-wider text-text-secondary">
             <th className="pb-2 text-left font-medium">{t('page')}</th>
@@ -57,7 +58,7 @@ export function DataTable({ data }: DataTableProps) {
                 {typeof row.evol === 'number' ? (
                   <DeltaBadge value={row.evol} />
                 ) : (
-                  <span className="text-text-tertiary">—</span>
+                  <span className="text-text-tertiary">{tCommon('notAvailable')}</span>
                 )}
               </td>
               <td className="py-3 text-right font-mono text-sm text-text-secondary">
@@ -67,6 +68,7 @@ export function DataTable({ data }: DataTableProps) {
           ))}
         </tbody>
       </table>
+      </div>
     </Card>
   );
 }

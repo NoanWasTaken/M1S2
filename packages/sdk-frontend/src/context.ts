@@ -1,4 +1,3 @@
-// Classify the referrer into a category
 function classifyReferrer(referrer: string): string {
     if (!referrer) return 'direct';
 

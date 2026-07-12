@@ -3,6 +3,8 @@ import type { Response } from 'express';
 const registry = new Map<string, Set<Response>>();
 const rooms = new Map<string, Set<Response>>();
 
+export const ADMIN_ROOM = 'admins';
+
 export function addSubscriber(accountId: string, res: Response): void {
   if (!registry.has(accountId)) registry.set(accountId, new Set());
   registry.get(accountId)!.add(res);
@@ -62,10 +64,12 @@ export function startHeartbeat(): void {
         try {
           res.write(':\n\n');
         } catch {
-          // connection lost, cleanup happens on req.close
         }
       }
     }
   }, 15_000);
-  console.log('[SSE] Heartbeat started (15s interval)');
+}
+
+export function pushToAdmins(event: string, data: unknown): void {
+  pushToRoom(ADMIN_ROOM, event, data);
 }

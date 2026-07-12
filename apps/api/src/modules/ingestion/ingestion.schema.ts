@@ -10,7 +10,7 @@ const eventSchema = z.object({
 });
 
 export const ingestBatchSchema = z.object({
-    events: z.array(eventSchema).min(1).max(50), // 50 events per batch
+    events: z.array(eventSchema).min(1).max(50),
 });
 
 export type IngestBatchInput = z.infer<typeof ingestBatchSchema>;

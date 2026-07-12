@@ -17,6 +17,7 @@
 
   --color-success: #34d399;
   --color-danger: #f87171;
+  --color-warning: #fbbf24;
 
   --color-text-primary: #e5e7eb;
   --color-text-secondary: #6b7280;
@@ -31,12 +32,14 @@
   --bg-active: rgba(56, 189, 248, 0.12);
 
   --border-subtle: #1c2333;
+  --border-warning: #fbbf24;
 
   --accent: #38bdf8;
   --accent-secondary: #818cf8;
 
   --success: #34d399;
   --danger: #f87171;
+  --warning: #fbbf24;
 
   --text-primary: #e5e7eb;
   --text-secondary: #6b7280;
@@ -68,4 +71,80 @@ label[for] {
 button:disabled,
 [role="button"][aria-disabled="true"] {
   cursor: not-allowed;
+}
+
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes title-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter {
+  animation: page-fade-in 0.28s ease-out both;
+}
+
+.page-enter h1 {
+  animation: title-rise 0.42s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both;
+}
+
+.page-enter-auth {
+  animation: title-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+input[type='date'].input-date {
+  color-scheme: dark;
+  min-width: 9.5rem;
+  appearance: none;
+}
+
+input[type='date'].input-date::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.15);
+  opacity: 0.9;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+input[type='date'].input-date::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+input[type='date'].input-date::-webkit-datetime-edit {
+  padding: 0;
+}
+
+input[type='date'].input-date::-webkit-datetime-edit-fields-wrapper {
+  color: var(--text-primary);
+}
+
+.date-range {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--bg-card) 80%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .page-enter h1,
+  .page-enter-auth {
+    animation: none;
+  }
 }

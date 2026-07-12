@@ -41,6 +41,7 @@ type Props = {
 export function TrackingManager({ mode }: Props) {
     const { user, isAuthenticated, isLoading } = useAuth();
     const t = useTranslations('tracking');
+    const tCommon = useTranslations('common');
 
     const [companies, setCompanies] = useState<Company[]>([]);
     const [applications, setApplications] = useState<Application[]>([]);
@@ -315,7 +316,7 @@ export function TrackingManager({ mode }: Props) {
                     </h1>
                     <span className="text-xl text-text-tertiary">/</span>
                     <span className="text-sm text-text-secondary">
-                        {t('appActive')}: {selectedApplication?.name ?? '—'}
+                        {t('appActive')}: {selectedApplication?.name ?? tCommon('notAvailable')}
                     </span>
                 </div>
 
@@ -469,9 +470,9 @@ export function TrackingManager({ mode }: Props) {
                                                     <p className="text-[11px] text-text-secondary">{t('selectedSteps')}</p>
                                                 </div>
                                                 <div className="flex gap-1">
-                                                    <button onClick={() => moveSelectedTag(index, -1)} className="rounded-lg border border-border-subtle px-2 py-1 text-xs text-text-secondary">↑</button>
-                                                    <button onClick={() => moveSelectedTag(index, 1)} className="rounded-lg border border-border-subtle px-2 py-1 text-xs text-text-secondary">↓</button>
-                                                    <button onClick={() => removeSelectedTag(tag.tagId)} className="rounded-lg border border-border-subtle px-2 py-1 text-xs text-text-secondary">×</button>
+                                                    <button type="button" aria-label={tCommon('moveUp')} onClick={() => moveSelectedTag(index, -1)} className="rounded-lg border border-border-subtle px-2 py-1 text-xs text-text-secondary">↑</button>
+                                                    <button type="button" aria-label={tCommon('moveDown')} onClick={() => moveSelectedTag(index, 1)} className="rounded-lg border border-border-subtle px-2 py-1 text-xs text-text-secondary">↓</button>
+                                                    <button type="button" aria-label={tCommon('removeItem')} onClick={() => removeSelectedTag(tag.tagId)} className="rounded-lg border border-border-subtle px-2 py-1 text-xs text-text-secondary">×</button>
                                                 </div>
                                             </div>
                                         ))}

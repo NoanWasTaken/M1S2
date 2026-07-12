@@ -29,6 +29,7 @@ type AuthContextValue = {
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -48,19 +49,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setOnUnauthorized(handleUnauthorized);
   }, [handleUnauthorized]);
 
+  const refreshUser = useCallback(async () => {
+    const meRes = await api.get('/api/v1/auth/me');
+    setUser({
+      id: meRes.data.user._id,
+      email: meRes.data.user.email ?? '',
+      role: meRes.data.user.role,
+      companyId: meRes.data.user.companyId,
+      teamRole: meRes.data.user.teamRole,
+    });
+  }, []);
+
   useEffect(() => {
     async function tryRestoreSession() {
       try {
         const token = await refreshAccessToken();
         setAccessToken(token);
-        const meRes = await api.get('/api/v1/auth/me');
-        setUser({
-          id: meRes.data.user._id,
-          email: '',
-          role: meRes.data.user.role,
-          companyId: meRes.data.user.companyId,
-          teamRole: meRes.data.user.teamRole,
-        });
+        await refreshUser();
       } catch {
         setUser(null);
         setAccessToken(null);
@@ -69,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
     tryRestoreSession();
-  }, []);
+  }, [refreshUser]);
 
   const login = useCallback(async (email: string, password: string) => {
     const { data } = await api.post('/api/v1/auth/login', { email, password });
@@ -100,6 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
+        refreshUser,
       }}
     >
       {children}

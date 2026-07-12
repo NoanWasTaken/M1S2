@@ -2,7 +2,6 @@ import type { PipelineStage } from 'mongoose';
 import { EventModel } from '../../models/event.js';
 import { ApplicationModel } from '../../models/application.js';
 
-// Duration (in ms) of each supported period.
 const PERIOD_MS: Record<string, number> = {
   '24h': 24 * 60 * 60 * 1000,
   '7d': 7 * 24 * 60 * 60 * 1000,
@@ -10,15 +9,12 @@ const PERIOD_MS: Record<string, number> = {
   '90d': 90 * 24 * 60 * 60 * 1000,
 };
 
-// Current window: [now - period, now]
 function getPeriodDates(period: string) {
   const now = new Date();
   const span = PERIOD_MS[period] ?? PERIOD_MS['24h'];
   return { start: new Date(now.getTime() - span), end: now };
 }
 
-// Previous window: the window immediately BEFORE the current one,
-// i.e. [now - 2*period, now - period]. Used for deltas.
 function getPreviousPeriodDates(period: string) {
   const now = new Date();
   const span = PERIOD_MS[period] ?? PERIOD_MS['24h'];
@@ -72,7 +68,6 @@ export async function getOverviewData(companyId: string, period: string, appId?:
     },
   };
 
-  // --- KPI pipeline ---
   const kpiPipeline: PipelineStage[] = [
     matchStage,
     {
@@ -82,7 +77,6 @@ export async function getOverviewData(companyId: string, period: string, appId?:
         pageViews: { $sum: { $cond: [{ $eq: ['$type', 'pageview'] }, 1, 0] } },
         sessions: { $addToSet: '$sessionId' },
         totalDuration: { $sum: { $ifNull: ['$payload.duration', 0] } },
-        // Sessions that produced at least one pageview (for bounce rate).
         pageviewSessions: {
           $addToSet: {
             $cond: [{ $eq: ['$type', 'pageview'] }, '$sessionId', '$$REMOVE'],
@@ -110,17 +104,15 @@ export async function getOverviewData(companyId: string, period: string, appId?:
     pageviewSessionCount: 0,
   };
 
-  const avgDurationSec = kpi.uniqueSessions > 0 ? Math.round(kpi.totalDuration / kpi.uniqueSessions) : 0;
+  const avgDurationSec = kpi.uniqueSessions > 0
+    ? Math.round(kpi.totalDuration / kpi.uniqueSessions / 1000)
+    : 0;
   const avgDurationStr = `${Math.floor(avgDurationSec / 60)}m ${avgDurationSec % 60}s`;
 
-  // A "bounce" = a session with exactly one pageview. Approximation:
-  // sessions whose pageview count equals their total events is out of scope here,
-  // so we keep the simple ratio of single-pageview sessions.
   const bounceRate = kpi.uniqueSessions > 0
     ? Math.round((kpi.pageviewSessionCount > 0 ? kpi.pageviewSessionCount / kpi.uniqueSessions : 0) * 100)
     : 0;
 
-  // --- Previous period (real previous window) for deltas ---
   const prev = getPreviousPeriodDates(period);
   const prevKpiPipeline: PipelineStage[] = [
     {
@@ -154,7 +146,6 @@ export async function getOverviewData(companyId: string, period: string, appId?:
     ? Math.round(((kpi.pageViews - prevKpi.pageViews) / prevKpi.pageViews) * 1000) / 10
     : 0;
 
-  // --- Traffic time series pipeline ---
   const trafficPipeline: PipelineStage[] = [
     matchStage,
     {
@@ -181,7 +172,6 @@ export async function getOverviewData(companyId: string, period: string, appId?:
   ];
   const traffic = await EventModel.aggregate(trafficPipeline);
 
-  // --- Top pages pipeline ---
   const topPagesPipeline: PipelineStage[] = [
     matchStage,
     { $match: { type: 'pageview', url: { $exists: true, $ne: null } } },
@@ -217,7 +207,7 @@ export async function getOverviewData(companyId: string, period: string, appId?:
     '/docs/api': 'Documentation API',
   };
   const topPages = topPagesRaw.map((p, i) => {
-    const dur = p.totalDuration && p.sessions > 0 ? Math.round(p.totalDuration / p.sessions) : 0;
+    const dur = p.sessions > 0 ? Math.round(p.totalDuration / p.sessions / 1000) : 0;
     return {
       rank: i + 1,
       name: pageLabels[p.url] || p.url,
@@ -227,7 +217,6 @@ export async function getOverviewData(companyId: string, period: string, appId?:
     };
   });
 
-  // --- Traffic sources pipeline ---
   const sourcesPipeline: PipelineStage[] = [
     matchStage,
     {
@@ -247,21 +236,13 @@ export async function getOverviewData(companyId: string, period: string, appId?:
     referral: '#fb923c',
     email: '#6b7280',
   };
-  const sourceLabels: Record<string, string> = {
-    organic: 'Organique',
-    direct: 'Direct',
-    social: 'Social',
-    referral: 'Référents',
-    email: 'Email',
-  };
   const sources = sourcesRaw.map((s) => ({
-    label: sourceLabels[s._id] || s._id,
+    key: String(s._id),
     value: totalSourceCount > 0 ? Math.round((s.count / totalSourceCount) * 100) : 0,
     color: sourceColors[s._id] || '#6b7280',
   }));
 
 
-  // --- Active pages (last 5 minutes), distinct visitors per page ---
   const activeSince = new Date(Date.now() - 5 * 60 * 1000);
   const activePagesPipeline: PipelineStage[] = [
     {
@@ -291,7 +272,6 @@ export async function getOverviewData(companyId: string, period: string, appId?:
   ];
   const activePages = await EventModel.aggregate(activePagesPipeline);
 
-  // --- Devices pipeline ---
   const devicesPipeline: PipelineStage[] = [
     matchStage,
     {
@@ -304,13 +284,8 @@ export async function getOverviewData(companyId: string, period: string, appId?:
   ];
   const devicesRaw = await EventModel.aggregate(devicesPipeline);
   const totalDeviceCount = devicesRaw.reduce((sum, d) => sum + d.count, 0);
-  const deviceLabels: Record<string, string> = {
-    desktop: 'Desktop',
-    mobile: 'Mobile',
-    tablet: 'Tablette',
-  };
   const devices = devicesRaw.map((d) => ({
-    label: deviceLabels[d._id] || d._id,
+    key: String(d._id),
     percentage: totalDeviceCount > 0 ? Math.round((d.count / totalDeviceCount) * 100) : 0,
     icon: d._id === 'mobile' ? 'mobile' : d._id === 'tablet' ? 'tablet' : 'desktop',
   }));

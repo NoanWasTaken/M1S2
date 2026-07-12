@@ -2,12 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { Card } from '@/components/ui/card';
-
-type DeviceItem = {
-  label: string;
-  percentage: number;
-  icon: string;
-};
+import type { DeviceItem } from '@/lib/dashboard-api';
 
 type ProgressListProps = {
   data: DeviceItem[];
@@ -32,33 +27,45 @@ const iconMap: Record<string, React.ReactNode> = {
   ),
 };
 
+const DEVICE_LABEL_KEYS: Record<string, 'desktop' | 'mobile' | 'tablet'> = {
+  desktop: 'desktop',
+  mobile: 'mobile',
+  tablet: 'tablet',
+};
+
 export function ProgressList({ data, title }: ProgressListProps) {
   const t = useTranslations('dashboard');
   const displayTitle = title ?? t('devices');
+
   return (
     <Card className="flex flex-col gap-4">
       <h3 className="text-sm font-semibold text-text-primary">{displayTitle}</h3>
 
       <div className="flex flex-col gap-3">
-        {data.map((item) => (
-          <div key={item.label}>
-            <div className="mb-1.5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {iconMap[item.icon]}
-                <span className="text-sm text-text-primary">{item.label}</span>
+        {data.map((item) => {
+          const labelKey = DEVICE_LABEL_KEYS[item.key];
+          return (
+            <div key={item.key}>
+              <div className="mb-1.5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {iconMap[item.icon]}
+                  <span className="text-sm text-text-primary">
+                    {labelKey ? t(labelKey) : item.key}
+                  </span>
+                </div>
+                <span className="text-sm font-mono text-text-secondary">
+                  {item.percentage}%
+                </span>
               </div>
-              <span className="text-sm font-mono text-text-secondary">
-                {item.percentage}%
-              </span>
+              <div className="h-1 w-full overflow-hidden rounded-full bg-border-subtle">
+                <div
+                  className="h-full rounded-full bg-accent transition-all"
+                  style={{ width: `${item.percentage}%` }}
+                />
+              </div>
             </div>
-            <div className="h-1 w-full overflow-hidden rounded-full bg-border-subtle">
-              <div
-                className="h-full rounded-full bg-accent transition-all"
-                style={{ width: `${item.percentage}%` }}
-              />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </Card>
   );

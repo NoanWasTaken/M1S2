@@ -1,5 +1,3 @@
-// Application controller for the API
-
 import { Request, Response } from 'express';
 import { createApplicationSchema } from './application.schema.js';
 import { createApplication, listApplications } from './application.service.js';

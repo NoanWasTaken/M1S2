@@ -1,8 +1,8 @@
 export type SdkConfig = {
     appId: string;
-    endpoint: string; // Ingestion API URL
-    flushIntervalMs?: number; // How often to send
-    batchSize?: number; // Max size of a batch
+    endpoint: string;
+    flushIntervalMs?: number;
+    batchSize?: number;
 };
 
 export type TrackedEvent = {

@@ -1,7 +1,8 @@
 import type { Request, Response } from 'express';
 import { verifyAccessToken, verifyRefreshToken } from '../modules/auth/jwt.js';
-import { addSubscriber, removeSubscriber, addToRoom, removeFromRoom } from './sse-registry.js';
+import { addSubscriber, removeSubscriber, addToRoom, removeFromRoom, ADMIN_ROOM } from './sse-registry.js';
 import { ConversationModel } from '../models/conversation.js';
+import { userConnected, userDisconnected } from './presence.js';
 
 export async function sseStream(req: Request, res: Response): Promise<void> {
   try {
@@ -25,7 +26,7 @@ export async function sseStream(req: Request, res: Response): Promise<void> {
 
     const { companyId, sub: userId, role } = payload;
 
-    // Admin can connect without a companyId (they see all conversations)
+    // Admin: no companyId
     if (!companyId && role !== 'admin') {
       res.status(401).end();
       return;
@@ -37,20 +38,23 @@ export async function sseStream(req: Request, res: Response): Promise<void> {
     res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders();
 
-    // Use userId as registry key for admins without companyId
     const registryKey = companyId || `admin:${userId}`;
     res.write(`event: connected\ndata: ${JSON.stringify({ companyId: companyId || null })}\n\n`);
 
     addSubscriber(registryKey, res);
+    userConnected(userId);
 
     const subscribedRooms: string[] = [];
 
     if (role === 'admin') {
       addToRoom('support:notify', res);
       subscribedRooms.push('support:notify');
+
+      addToRoom(ADMIN_ROOM, res);
+      subscribedRooms.push(ADMIN_ROOM);
     }
 
-    // Admins see all non-closed conversations; webmasters see only their company's
+    // Admin: all conversations
     const conversationFilter: Record<string, unknown> = { status: { $ne: 'closed' } };
     if (role === 'webmaster') {
       conversationFilter.companyId = companyId;
@@ -64,6 +68,7 @@ export async function sseStream(req: Request, res: Response): Promise<void> {
     }
 
     req.on('close', () => {
+      userDisconnected(userId);
       removeSubscriber(registryKey, res);
       for (const roomId of subscribedRooms) {
         removeFromRoom(roomId, res);

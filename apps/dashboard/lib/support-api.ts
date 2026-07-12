@@ -7,7 +7,9 @@ export interface Conversation {
   _id: string;
   companyId: string;
   userId: string;
+  requesterEmail?: string | null;
   subject: string;
+  kind?: 'support' | 'internal';
   status: ConversationStatus;
   assignedTo: string | null;
   openedAt: string | null;
@@ -57,6 +59,14 @@ export async function fetchMessages(conversationId: string, page = 1, limit = 20
 
 export async function createConversation(subject: string, initialMessage: string) {
   const res = await api.post<{ conversation: Conversation }>('/api/v1/conversations', { subject, initialMessage });
+  return res.data.conversation;
+}
+
+export async function createInternalConversation(subject: string, initialMessage: string) {
+  const res = await api.post<{ conversation: Conversation }>(
+    '/api/v1/conversations/internal',
+    { subject, initialMessage },
+  );
   return res.data.conversation;
 }
 

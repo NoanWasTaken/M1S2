@@ -7,6 +7,25 @@ import {
     devicesData as mockDevices,
 } from '@/lib/mock-data';
 
+export type KpiItem = {
+    id: 'sessions' | 'pageViews' | 'bounceRate' | 'avgDuration';
+    value: string;
+    delta: number;
+    ratio?: string;
+};
+
+export type SourceItem = {
+    key: string;
+    value: number;
+    color: string;
+};
+
+export type DeviceItem = {
+    key: string;
+    percentage: number;
+    icon: string;
+};
+
 type OverviewResponse = {
     kpis: {
         sessions: number;
@@ -18,8 +37,8 @@ type OverviewResponse = {
     };
     traffic: { time: string; sessions: number; pageViews: number }[];
     topPages: { rank: number; name: string; path: string; views: number; avgDuration: string }[];
-    sources: { label: string; value: number; color: string }[];
-    devices: { label: string; percentage: number; icon: string }[];
+    sources: SourceItem[];
+    devices: DeviceItem[];
     activePages: { path: string; visitors: number }[];
 };
 
@@ -28,22 +47,22 @@ function compact(n: number): string {
     return String(n);
 }
 
-function toKpiCards(k: OverviewResponse['kpis']): typeof mockKpi {
+function toKpiCards(k: OverviewResponse['kpis']): KpiItem[] {
     const ratio = k.sessions > 0 ? (k.pageViews / k.sessions).toFixed(2) : '0';
     return [
-        { id: 'sessions', label: 'SESSIONS', value: compact(k.sessions), delta: k.sessionsDelta, subtext: 'vs. période précédente' },
-        { id: 'pageViews', label: 'PAGES VUES', value: compact(k.pageViews), delta: k.pageViewsDelta, subtext: `pages / session : ${ratio}` },
-        { id: 'bounceRate', label: 'TAUX DE REBOND', value: `${k.bounceRate}%`, delta: 0, subtext: 'objectif : < 40%' },
-        { id: 'avgDuration', label: 'DURÉE MOYENNE', value: k.avgDuration, delta: 0, subtext: 'par session' },
+        { id: 'sessions', value: compact(k.sessions), delta: k.sessionsDelta },
+        { id: 'pageViews', value: compact(k.pageViews), delta: k.pageViewsDelta, ratio },
+        { id: 'bounceRate', value: `${k.bounceRate}%`, delta: 0 },
+        { id: 'avgDuration', value: k.avgDuration, delta: 0 },
     ];
 }
 
 export type DashboardData = {
-    kpi: typeof mockKpi;
+    kpi: KpiItem[];
     traffic: typeof mockTraffic;
     topPages: typeof mockTopPages;
-    sources: typeof mockSources;
-    devices: typeof mockDevices;
+    sources: SourceItem[];
+    devices: DeviceItem[];
     activePages: { path: string; visitors: number }[];
 };
 

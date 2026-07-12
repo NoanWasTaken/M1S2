@@ -3,19 +3,23 @@
 import { useTranslations } from 'next-intl';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Card } from '@/components/ui/card';
-
-type SourceItem = {
-  label: string;
-  value: number;
-  color: string;
-};
+import type { SourceItem } from '@/lib/dashboard-api';
 
 type DonutChartProps = {
   data: SourceItem[];
 };
 
+const SOURCE_LABEL_KEYS: Record<string, 'organic' | 'direct' | 'social' | 'referrals' | 'email'> = {
+  organic: 'organic',
+  direct: 'direct',
+  social: 'social',
+  referral: 'referrals',
+  email: 'email',
+};
+
 export function DonutChart({ data }: DonutChartProps) {
   const t = useTranslations('dashboard');
+
   return (
     <Card className="flex flex-col gap-4">
       <h3 className="text-sm font-semibold text-text-primary">{t('trafficSources')}</h3>
@@ -42,18 +46,23 @@ export function DonutChart({ data }: DonutChartProps) {
         </div>
 
         <div className="flex flex-col gap-2">
-          {data.map((item) => (
-            <div key={item.label} className="flex items-center gap-2">
-              <span
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: item.color }}
-              />
-              <span className="text-sm text-text-primary">{item.label}</span>
-              <span className="ml-auto text-sm font-mono text-text-secondary">
-                {item.value}%
-              </span>
-            </div>
-          ))}
+          {data.map((item) => {
+            const labelKey = SOURCE_LABEL_KEYS[item.key];
+            return (
+              <div key={item.key} className="flex items-center gap-2">
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: item.color }}
+                />
+                <span className="text-sm text-text-primary">
+                  {labelKey ? t(labelKey) : item.key}
+                </span>
+                <span className="ml-auto text-sm font-mono text-text-secondary">
+                  {item.value}%
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </Card>

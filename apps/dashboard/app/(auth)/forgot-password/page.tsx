@@ -16,6 +16,7 @@ type FormValues = { email: string };
 
 export default function ForgotPasswordPage() {
     const t = useTranslations('common');
+    const tAuth = useTranslations('auth.login');
     const locale = useLocale();
     const schema = useMemo(
         () => z.object({ email: z.string().email(t('invalidEmail')) }),
@@ -57,9 +58,9 @@ export default function ForgotPasswordPage() {
                     <FormField
                         control={form.control}
                         name="email"
-                        label="Email"
+                        label={tAuth('email')}
                         type="email"
-                        placeholder="vous@exemple.fr"
+                        placeholder={tAuth('emailPlaceholder')}
                     />
                     <Button type="submit" className="w-full" size="lg" isLoading={form.formState.isSubmitting}>
                         {t('sendLink')}

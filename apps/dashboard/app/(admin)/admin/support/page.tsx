@@ -125,8 +125,8 @@ export default function AdminSupportPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)]">
-      <div className="flex w-80 shrink-0 flex-col">
+    <div className="flex h-[calc(100dvh-3.5rem)] min-h-0 flex-col overflow-hidden lg:h-[calc(100vh-4rem)] lg:flex-row">
+      <div className={`${activeId ? 'hidden lg:flex' : 'flex'} w-full shrink-0 flex-col lg:w-80`}>
         <div className="border-b border-border-subtle px-4 py-3">
           <h1 className="text-sm font-semibold text-text-primary">{t('waitingQueue')}</h1>
         </div>
@@ -142,20 +142,21 @@ export default function AdminSupportPage() {
         </div>
       </div>
 
-      <div className="flex-1">
+      <div className={`min-h-0 flex-1 ${activeId ? 'flex flex-col' : 'hidden lg:flex lg:flex-col'}`}>
         {activeConv ? (
           <ConversationThread
             conversationId={activeConv._id}
             messages={messages}
             onNewMessage={(msg) => setMessages((prev) => prev.some((m) => m._id === msg._id) ? prev : [...prev, msg])}
             typingUserId={typingUserId}
+            onBack={() => setActiveId(null)}
             onClose={handleClose}
             onAccept={handleAccept}
             status={activeConv.status}
             canAccept={activeConv.status === 'waiting'}
           />
         ) : (
-          <div className="flex h-full items-center justify-center">
+          <div className="hidden h-full items-center justify-center lg:flex">
             <p className="text-sm text-text-secondary">{t('selectConversation')}</p>
           </div>
         )}
