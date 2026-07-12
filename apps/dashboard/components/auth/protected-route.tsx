@@ -4,7 +4,6 @@ import { useAuth } from '@/providers/auth-provider';
 import { useRouter } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
 import { FullPageSpinner } from '@/components/ui/spinner';
-import { userAgent } from 'next/server';
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, isAuthenticated, isLoading } = useAuth();
