@@ -15,9 +15,13 @@ export async function authenticateApp(req: Request, _res: Response, next: NextFu
 
     const origin = req.header('origin');
     const allowed = application.allowedOrigins ?? [];
-    // CORS origin whitelist
-    if (allowed.length > 0 && (!origin || !allowed.includes(origin))) {
-        throw new AppError(403, 'origin_not_allowed', "This origin is not allowed.");
+
+    if (allowed.length === 0) {
+        throw new AppError(403, 'origins_not_configured', 'No allowed origins configured for this application.');
+    }
+
+    if (!origin || !allowed.includes(origin)) {
+        throw new AppError(403, 'origin_not_allowed', 'This origin is not allowed.');
     }
 
     req.application = { id: application._id.toString(), appId: application.appId };

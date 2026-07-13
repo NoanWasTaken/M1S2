@@ -257,7 +257,7 @@ export default function PagesPage() {
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <span className="text-[10px] uppercase tracking-wider text-text-secondary">{t('metrics')}</span>
+                            <span className="text-[10px] uppercase tracking-wider text-text-secondary">{t('metricsLabel')}</span>
                             <div className="flex flex-wrap gap-1.5">
                                 {ALL_METRICS.map((metric, i) => (
                                     <Toggle

@@ -3,6 +3,7 @@ import { getVisitorId, getSessionId } from './identity.js';
 import { collectContext } from './context.js';
 import { startAutoCapture } from './capture.js';
 import { EventQueue } from './queue.js';
+import { initFromScript as bootstrapInitFromScript, parseScriptConfig } from './bootstrap.js';
 
 let queue: EventQueue | null = null;
 
@@ -35,3 +36,9 @@ export const Analytics = {
         queue.add(event);
     },
 };
+
+export function initFromScript(script?: HTMLScriptElement | null): boolean {
+    return bootstrapInitFromScript((config) => Analytics.init(config), script);
+}
+
+export { parseScriptConfig };

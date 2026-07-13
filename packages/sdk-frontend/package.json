@@ -4,7 +4,17 @@
   "private": true,
   "type": "module",
   "main": "dist/index.js",
+  "browser": "dist/analytix.min.js",
   "scripts": {
-    "build": "rm -rf dist && tsc"
+    "build": "npm run build:lib && npm run build:bundle",
+    "build:lib": "rm -rf dist && tsc",
+    "build:bundle": "node scripts/build-bundle.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.8",
+    "happy-dom": "^17.4.7",
+    "vitest": "^3.2.4"
   }
 }

@@ -399,7 +399,14 @@
     "nature_unknown": "Autre",
     "chartTitle": "Activité dans le temps",
     "noData": "Aucune donnée sur cette période.",
-    "metrics": "Metrics",
+    "metricsLabel": "Mesures",
+    "metrics": {
+      "pageview": "Pages vues",
+      "click": "Clics",
+      "hover": "Survols",
+      "page_exit": "Sorties",
+      "tabchange": "Changements d'onglet"
+    },
     "allPagesActive": "Toutes les pages (cliquez pour filtrer)",
     "filteredPages": "Pages sélectionnées",
     "clearPages": "Tout afficher",
@@ -408,12 +415,5 @@
     "durationZero": "0 s",
     "durationMinutesSeconds": "{minutes} min {seconds} s",
     "durationSecondsOnly": "{seconds} s"
-  },
-  "metrics": {
-    "pageview": "Pages vues",
-    "click": "Clics",
-    "hover": "Survols",
-    "page_exit": "Sorties",
-    "tabchange": "Changements d'onglet"
   }
 }

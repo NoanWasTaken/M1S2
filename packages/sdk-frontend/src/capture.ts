@@ -33,6 +33,20 @@ function describe(el: HTMLElement) {
     };
 }
 
+function patchHistory(onNavigate: () => void): void {
+    const { pushState, replaceState } = history;
+
+    history.pushState = function (state, title, url) {
+        pushState.call(history, state, title, url);
+        onNavigate();
+    };
+
+    history.replaceState = function (state, title, url) {
+        replaceState.call(history, state, title, url);
+        onNavigate();
+    };
+}
+
 export function startAutoCapture(track: TrackFn): void {
     track('pageview', { referrer: document.referrer });
 
@@ -43,6 +57,12 @@ export function startAutoCapture(track: TrackFn): void {
         if (duration > 0) {
             track('page_exit', { duration });
         }
+    };
+
+    const handleNavigation = () => {
+        sendPageDuration();
+        timer = new PageTimer();
+        track('pageview', { referrer: document.referrer });
     };
 
     document.addEventListener('visibilitychange', () => {
@@ -57,11 +77,10 @@ export function startAutoCapture(track: TrackFn): void {
     window.addEventListener('pagehide', () => {
         sendPageDuration();
     });
-    window.addEventListener('popstate', () => {
-        sendPageDuration();
-        timer = new PageTimer();
-        track('pageview', { referrer: document.referrer });
-    });
+
+    window.addEventListener('popstate', handleNavigation);
+    window.addEventListener('hashchange', handleNavigation);
+    patchHistory(handleNavigation);
 
     document.addEventListener('click', (e) => {
         const el = findInteractive(e.target);
@@ -75,13 +94,5 @@ export function startAutoCapture(track: TrackFn): void {
         if (!el || el === lastHovered) return;
         lastHovered = el;
         track('hover', describe(el));
-    });
-
-    document.addEventListener('visibilitychange', () => {
-        track('tabchange', { state: document.visibilityState });
-    });
-
-    window.addEventListener('popstate', () => {
-        track('pageview', { referrer: document.referrer });
     });
 }
