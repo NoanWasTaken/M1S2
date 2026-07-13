@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, startTransition } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ConversationList } from '@/components/support/conversation-list';
@@ -33,30 +33,37 @@ export default function AdminSupportPage() {
     router.replace(`?${params.toString()}`, { scroll: false });
   }, [router, searchParams]);
 
-  const load = useCallback(async () => {
+  useEffect(() => {
+    let cancelled = false;
+    fetchConversations(statusFilter)
+      .then((data) => { if (!cancelled) setConversations(data.conversations); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [statusFilter]);
+
+  const reload = useCallback(async () => {
     try {
       const data = await fetchConversations(statusFilter);
       setConversations(data.conversations);
     } catch {
-    } finally {
-      setLoading(false);
     }
   }, [statusFilter]);
 
   useEffect(() => {
-    load();
-  }, [load]);
-
-  useEffect(() => {
+    startTransition(() => {
+      if (activeId) {
+        const pending = pendingCalls[activeId];
+        setIncomingCallSignal(pending ?? null);
+        setTypingUserId(null);
+      } else {
+        setMessages([]);
+      }
+    });
     if (activeId) {
-      const pending = pendingCalls[activeId];
-      setIncomingCallSignal(pending ?? null);
-      setTypingUserId(null);
       fetchMessages(activeId)
         .then((data) => setMessages(data.messages))
         .catch(() => { });
-    } else {
-      setMessages([]);
     }
   }, [activeId, pendingCalls]);
 
@@ -75,12 +82,12 @@ export default function AdminSupportPage() {
         }];
       });
     }
-    load();
-  }, [activeId, load]);
+    reload();
+  }, [activeId, reload]);
 
   const handlePresence = useCallback((_payload: SupportPresenceEvent) => {
-    load();
-  }, [load]);
+    reload();
+  }, [reload]);
 
   const handleTyping = useCallback((payload: SupportTypingEvent) => {
     if (payload.conversationId === activeId) {
@@ -117,7 +124,7 @@ export default function AdminSupportPage() {
     onMessage: handleMessage,
     onPresence: handlePresence,
     onTyping: handleTyping,
-    onNewConversation: load,
+    onNewConversation: reload,
     onCallSignal: handleCallSignal,
   }, activeId || undefined);
 
@@ -129,7 +136,7 @@ export default function AdminSupportPage() {
     if (!activeId) return;
     try {
       await acceptConversation(activeId);
-      load();
+      reload();
     } catch {
     }
   };
@@ -139,7 +146,7 @@ export default function AdminSupportPage() {
     try {
       await closeConversation(activeId);
       setActiveId(null);
-      load();
+      reload();
     } catch {
     }
   };

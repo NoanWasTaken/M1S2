@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from '@/lib/zod-resolver';
 import { useTranslations } from 'next-intl';
 import { loginSchema, type LoginInput } from '@m1s2/shared';
 import { useAuth } from '@/providers/auth-provider';
