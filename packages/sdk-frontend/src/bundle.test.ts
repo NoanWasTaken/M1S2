@@ -25,6 +25,9 @@ function runInlineBundle(attrs: Record<string, string>) {
     }
     inline.textContent = readFileSync(BUNDLE_PATH, 'utf8');
     document.head.appendChild(inline);
+    Object.defineProperty(document, 'currentScript', { value: inline, configurable: true });
+    eval(inline.textContent);
+    Object.defineProperty(document, 'currentScript', { value: null, configurable: true });
 }
 
 describe('analytix.js IIFE bundle', () => {
