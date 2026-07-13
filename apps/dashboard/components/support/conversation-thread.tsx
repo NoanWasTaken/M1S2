@@ -152,7 +152,7 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
   const logCallStart = async () => {
     if (callSessionRef.current.hasLoggedStart) return;
     callSessionRef.current.hasLoggedStart = true;
-    await pushSystemMessage('Video call started');
+    await pushSystemMessage(t('callSystemStarted'));
   };
 
   const stopAllLocalStreams = () => {
@@ -184,7 +184,7 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
         onCallSignal({ type: 'state', payload: { state: 'ended' }, sessionId });
       }
 
-      void pushSystemMessage(`Call ended. Duration: ${formatCallDuration(startedAt)}`);
+      void pushSystemMessage(t('callSystemEnded', { duration: formatCallDuration(startedAt) }));
     }
 
     peerConnectionRef.current?.close();
@@ -307,7 +307,7 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
       setCallStatus('connecting');
     } catch (error) {
       setCallStatus('ended');
-      setCallError(error instanceof Error ? error.message : 'Unable to start the call.');
+      setCallError(error instanceof Error ? error.message : t('callErrorStart'));
     }
   };
 
@@ -344,7 +344,7 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
       stream.getVideoTracks().forEach((track) => track.addEventListener('ended', stopOnEnd));
       stream.getAudioTracks().forEach((track) => track.addEventListener('ended', stopOnEnd));
     } catch (error) {
-      setScreenShareError(error instanceof Error ? error.message : 'Unable to share your screen.');
+      setScreenShareError(error instanceof Error ? error.message : t('callErrorShare'));
     }
   };
 
@@ -390,7 +390,7 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
         await element.requestFullscreen();
         setIsFullscreen(true);
       } catch {
-        setScreenShareError('Unable to enter fullscreen mode.');
+        setScreenShareError(t('callErrorFullscreenEnter'));
       }
       return;
     }
@@ -399,7 +399,7 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
       await document.exitFullscreen();
       setIsFullscreen(false);
     } catch {
-      setScreenShareError('Unable to exit fullscreen mode.');
+      setScreenShareError(t('callErrorFullscreenExit'));
     }
   };
 
@@ -442,7 +442,7 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
       try {
         await createPeerConnection();
       } catch (error) {
-        setCallError(error instanceof Error ? error.message : 'Unable to access media.');
+        setCallError(error instanceof Error ? error.message : t('callErrorMedia'));
         return;
       }
     }
@@ -471,7 +471,7 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
         onCallSignal?.({ type: 'answer', payload: answer, sessionId: callSessionRef.current.sessionId ?? undefined });
         onCallSignal?.({ type: 'state', payload: { state: 'answered' }, sessionId: callSessionRef.current.sessionId ?? undefined });
       } catch (error) {
-        setCallError(error instanceof Error ? error.message : 'Unable to answer the call.');
+        setCallError(error instanceof Error ? error.message : t('callErrorAnswer'));
       }
       return;
     }
@@ -482,7 +482,7 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
         await flushPendingCandidates(pc);
         setCallStatus('connected');
       } catch (error) {
-        setCallError(error instanceof Error ? error.message : 'Unable to connect the call.');
+        setCallError(error instanceof Error ? error.message : t('callErrorConnect'));
       }
       return;
     }
@@ -550,7 +550,7 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
             onClick={callStatus === 'connected' || callStatus === 'ringing' || callStatus === 'connecting' ? () => stopCall() : () => void handleStartCall()}
             className="rounded-md border border-border-subtle px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
           >
-            {callStatus === 'connected' || callStatus === 'ringing' || callStatus === 'connecting' ? 'End call' : 'Video call'}
+            {callStatus === 'connected' || callStatus === 'ringing' || callStatus === 'connecting' ? t('callEnd') : t('callVideo')}
           </button>
           {status !== 'closed' && onClose && (
             <button
@@ -570,10 +570,10 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
             <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
               <div>
                 <p className="text-sm font-semibold text-text-primary">
-                  {callStatus === 'connected' ? 'Video call active' : callStatus === 'ringing' ? 'Incoming / starting call' : callStatus === 'connecting' ? 'Connecting...' : 'Call ended'}
+                  {callStatus === 'connected' ? t('callActive') : callStatus === 'ringing' ? t('callRinging') : callStatus === 'connecting' ? t('callConnecting') : t('callEnded')}
                 </p>
                 <p className="text-xs text-text-secondary">
-                  {callError ?? 'The conversation stays in the background while the call is open.'}
+                  {callError ?? t('callBackgroundHint')}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -582,14 +582,14 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
                   onClick={() => void toggleFullscreen()}
                   className="rounded-md border border-border-subtle px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
                 >
-                  {isFullscreen ? 'Exit full screen' : 'Full screen'}
+                  {isFullscreen ? t('callExitFullscreen') : t('callFullscreen')}
                 </button>
                 <button
                   type="button"
                   onClick={() => stopCall()}
                   className="rounded-md border border-border-subtle px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
                 >
-                  {callStatus === 'connected' || callStatus === 'ringing' || callStatus === 'connecting' ? 'End call' : 'Close'}
+                  {callStatus === 'connected' || callStatus === 'ringing' || callStatus === 'connecting' ? t('callEnd') : t('close')}
                 </button>
               </div>
             </div>
@@ -599,11 +599,11 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
                 <div className="flex h-full flex-col gap-4">
                   <div className="relative flex-1 overflow-hidden rounded-xl bg-black">
                     <video ref={localVideoRef} autoPlay muted playsInline className="h-full w-full object-contain" />
-                    <div className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">Shared screen</div>
+                    <div className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">{t('callSharedScreen')}</div>
                     {cameraStreamRef.current ? (
                       <div className="absolute bottom-4 right-4 h-28 w-20 overflow-hidden rounded-xl border border-white/20 bg-black shadow-2xl sm:h-36 sm:w-24">
                         <video ref={cameraPreviewRef} autoPlay muted playsInline className="h-full w-full object-cover" />
-                        <div className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-1 text-[10px] font-medium text-white">Camera</div>
+                        <div className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-1 text-[10px] font-medium text-white">{t('callCamera')}</div>
                       </div>
                     ) : null}
                   </div>
@@ -611,26 +611,26 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
                     <video ref={remoteVideoRef} autoPlay playsInline className="h-full w-full object-cover" />
                     {!remoteStreamRef.current && (
                       <div className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-text-secondary">
-                        Waiting for the other participant to join the call.
+                        {t('callWaitingParticipant')}
                       </div>
                     )}
-                    <div className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">Guest</div>
+                    <div className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">{t('callGuest')}</div>
                   </div>
                 </div>
               ) : (
                 <div className="grid h-full gap-4 lg:grid-cols-2">
                   <div className="relative flex min-h-[220px] items-center justify-center overflow-hidden rounded-xl bg-black">
                     <video ref={localVideoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
-                    <div className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">You</div>
+                    <div className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">{t('callYou')}</div>
                   </div>
                   <div className="relative flex min-h-[220px] items-center justify-center overflow-hidden rounded-xl border border-border-subtle bg-bg-card">
                     <video ref={remoteVideoRef} autoPlay playsInline className="h-full w-full object-cover" />
                     {!remoteStreamRef.current && (
                       <div className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-text-secondary">
-                        Waiting for the other participant to join the call.
+                        {t('callWaitingParticipant')}
                       </div>
                     )}
-                    <div className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">Guest</div>
+                    <div className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">{t('callGuest')}</div>
                   </div>
                 </div>
               )}
@@ -646,7 +646,7 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
                         onClick={() => void stopScreenShare()}
                         className="rounded-md border border-border-subtle px-3 py-1.5 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
                       >
-                        Stop sharing
+                        {t('callStopSharing')}
                       </button>
                     ) : (
                       <>
@@ -655,14 +655,14 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
                           onClick={() => void handleShareScreen(false)}
                           className="rounded-md border border-border-subtle px-3 py-1.5 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
                         >
-                          Share screen
+                          {t('callShareScreen')}
                         </button>
                         <button
                           type="button"
                           onClick={() => void handleShareScreen(true)}
                           className="rounded-md border border-border-subtle px-3 py-1.5 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
                         >
-                          Share screen + audio
+                          {t('callShareScreenAudio')}
                         </button>
                       </>
                     )}
@@ -673,7 +673,7 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
                   onClick={callStatus === 'connected' || callStatus === 'ringing' || callStatus === 'connecting' ? () => stopCall() : () => void handleStartCall()}
                   className="rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-[#05070d] transition-opacity hover:opacity-90"
                 >
-                  {callStatus === 'connected' || callStatus === 'ringing' || callStatus === 'connecting' ? 'End call' : 'Start call'}
+                  {callStatus === 'connected' || callStatus === 'ringing' || callStatus === 'connecting' ? t('callEnd') : t('callStart')}
                 </button>
               </div>
               {screenShareError ? (
