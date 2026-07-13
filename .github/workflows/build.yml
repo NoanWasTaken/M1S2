@@ -12,6 +12,7 @@ env:
   REGISTRY: ghcr.io
   API_IMAGE: ghcr.io/noanwastaken/m1s2-api
   DASHBOARD_IMAGE: ghcr.io/noanwastaken/m1s2-dashboard
+  SDK_IMAGE: ghcr.io/noanwastaken/m1s2-sdk
 
 jobs:
   build:
@@ -43,6 +44,18 @@ jobs:
           tags: |
             ${{ env.API_IMAGE }}:latest
             ${{ env.API_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=min
+
+      - name: Build & push SDK
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.sdk
+          push: true
+          tags: |
+            ${{ env.SDK_IMAGE }}:latest
+            ${{ env.SDK_IMAGE }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=min
 
