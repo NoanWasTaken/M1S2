@@ -19,19 +19,11 @@ export class EventQueue {
         window.addEventListener('pagehide', () => this.flush(true));
     }
 
-    private flush(useBeacon = false): void {
+    private flush(_useBeacon = false): void {
         if (this.queue.length === 0) return;
 
         const events = this.queue;
         this.queue = []; // Prevent double send
-
-        const body = JSON.stringify({ events });
-
-        if (useBeacon && navigator.sendBeacon) {
-            // sendBeacon on unload
-            navigator.sendBeacon(this.config.endpoint, body);
-            return;
-        }
 
         fetch(this.config.endpoint, {
             method: 'POST',
@@ -39,7 +31,7 @@ export class EventQueue {
                 'Content-Type': 'application/json',
                 'x-app-id': this.config.appId,
             },
-            body,
+            body: JSON.stringify({ events }),
             keepalive: true,
         }).catch(() => {
             // Never break host site
