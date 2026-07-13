@@ -23,8 +23,8 @@ function navItems(role: string | undefined, isMember: boolean): NavItem[] {
     { href: '/dashboard', key: 'overview', icon: 'overview' },
     { href: '/pages', key: 'pages', icon: 'pages' },
     { href: '/events', key: 'events', icon: 'events' },
-    { href: '/tracking/tags', key: 'tags', icon: 'tags' },
-    { href: '/tracking/funnels', key: 'funnels', icon: 'funnels' },
+    { href: '/tags', key: 'tags', icon: 'tags' },
+    { href: '/funnels', key: 'funnels', icon: 'funnels' },
     { href: '/support', key: 'support', icon: 'support' },
   ];
 
