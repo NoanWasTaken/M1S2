@@ -414,6 +414,16 @@
     "avgDuration": "Avg. duration",
     "durationZero": "0s",
     "durationMinutesSeconds": "{minutes}m {seconds}s",
-    "durationSecondsOnly": "{seconds}s"
+    "durationSecondsOnly": "{seconds}s",
+    "exportCsv": "Export CSV",
+    "exportPdf": "Export PDF",
+    "exporting": "Exporting…"
+  },
+  "metrics": {
+    "pageview": "Page views",
+    "click": "Clicks",
+    "hover": "Hovers",
+    "page_exit": "Exits",
+    "tabchange": "Tab changes"
   }
 }
