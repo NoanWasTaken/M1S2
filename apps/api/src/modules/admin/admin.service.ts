@@ -1,14 +1,37 @@
 import { CompanyModel } from '../../models/company.js';
 import { UserModel } from '../../models/user.js';
+import { ApplicationModel } from '../../models/application.js';
 import { AppError } from '../../utils/app-error.js';
-import { signAccessToken } from '../auth/jwt.js';
+import { signAccessToken, signRefreshToken } from '../auth/jwt.js';
+import { sendCompanyValidatedEmail, sendCompanyRejectedEmail } from '../../utils/email.js';
+import { pushToAdmins, pushToAccount } from '../../realtime/sse-registry.js';
 
-// List all companies
 export async function listCompanies() {
-    return CompanyModel.find().sort({ createdAt: -1 });
+    return CompanyModel.find().sort({ createdAt: -1 }).lean();
 }
 
-// Validate a company + activate its webmaster
+export async function listUsers() {
+    const users = await UserModel.find()
+        .select('email role teamRole status companyId createdAt')
+        .sort({ createdAt: -1 })
+        .populate('companyId', 'name validationStatus')
+        .lean();
+
+    return users.map((u) => {
+        const company = u.companyId as unknown as { _id?: unknown; name?: string; validationStatus?: string } | null;
+        return {
+            ...u,
+            companyId: company?._id ?? null,
+            companyName: company?.name ?? null,
+            companyStatus: company?.validationStatus ?? null,
+        };
+    });
+}
+
+export async function countPendingCompanies() {
+    return CompanyModel.countDocuments({ validationStatus: 'pending' });
+}
+
 export async function validateCompany(companyId: string, adminId: string) {
     const company = await CompanyModel.findById(companyId);
     if (!company) {
@@ -19,16 +42,25 @@ export async function validateCompany(companyId: string, adminId: string) {
     company.validatedBy = adminId as unknown as typeof company.validatedBy;
     await company.save();
 
-    // Activate the webmaster(s) attached to this company
     await UserModel.updateMany(
         { companyId: company._id, role: 'webmaster' },
         { status: 'active' },
     );
 
+    const owner = await UserModel.findOne({ companyId: company._id, teamRole: 'owner' }).lean();
+    if (owner) {
+        pushToAccount(company._id.toString(), 'company:validated', {
+            companyId: company._id,
+            name: company.name,
+        });
+        await sendCompanyValidatedEmail(owner.email, company.name);
+    }
+
+    pushToAdmins('company:pending-count', { pending: await countPendingCompanies() });
+
     return company;
 }
 
-// Reject a company
 export async function rejectCompany(companyId: string) {
     const company = await CompanyModel.findById(companyId);
     if (!company) {
@@ -38,26 +70,51 @@ export async function rejectCompany(companyId: string) {
     company.validationStatus = 'rejected';
     await company.save();
 
+    const owner = await UserModel.findOne({ companyId: company._id, teamRole: 'owner' }).lean();
+    if (owner) {
+        await sendCompanyRejectedEmail(owner.email, company.name);
+    }
+
+    pushToAdmins('company:pending-count', { pending: await countPendingCompanies() });
+
     return company;
 }
 
-// Impersonate a webmaster
 export async function impersonateWebmaster(webmasterId: string, adminId: string) {
     const webmaster = await UserModel.findById(webmasterId);
     if (!webmaster || webmaster.role !== 'webmaster') {
         throw new AppError(404, 'webmaster_not_found', 'Webmaster not found.');
     }
 
-    // An access token that identifies the admin as this webmaster
-    const accessToken = signAccessToken({
+    const payload = {
         sub: webmaster._id.toString(),
-        role: 'webmaster',
+        role: 'webmaster' as const,
         companyId: webmaster.companyId?.toString(),
+        teamRole: webmaster.teamRole,
         impersonatedBy: adminId,
-    });
+    };
 
     return {
-        accessToken,
-        impersonating: { id: webmaster._id, email: webmaster.email },
+        accessToken: signAccessToken(payload),
+        refreshToken: signRefreshToken(payload),
+        impersonating: {
+            id: webmaster._id,
+            email: webmaster.email,
+            teamRole: webmaster.teamRole,
+        },
     };
+}
+
+export async function getCompanyDetail(companyId: string) {
+    const company = await CompanyModel.findById(companyId).lean();
+    if (!company) {
+        throw new AppError(404, 'company_not_found', 'Company not found.');
+    }
+
+    const [users, applications] = await Promise.all([
+        UserModel.find({ companyId }).select('email teamRole status createdAt').lean(),
+        ApplicationModel.find({ companyId }).select('name appId createdAt').lean(),
+    ]);
+
+    return { company, users, applications };
 }

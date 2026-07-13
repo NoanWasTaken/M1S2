@@ -5,15 +5,12 @@ import { AppError } from '../utils/app-error.js';
 export function authenticate(req: Request, _res: Response, next: NextFunction) {
     const header = req.headers.authorization;
 
-    // The header must exist and start
     if (!header || !header.startsWith('Bearer ')) {
         throw new AppError(401, 'unauthenticated', 'Token missing.');
     }
 
-    // Extract the token
     const token = header.substring(7);
 
-    // Verify the token; if it is invalid/expired, we refuse
     try {
         const payload = verifyAccessToken(token);
         req.user = payload;

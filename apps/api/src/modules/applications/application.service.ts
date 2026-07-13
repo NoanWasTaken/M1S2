@@ -14,14 +14,11 @@ export async function createApplication(
     name: string,
     companyIdFromBody?: string,
 ) {
-    // Determine the targeted company
     let companyId: string | undefined;
 
     if (creator.role === 'webmaster') {
-        // The webmaster always creates for their own company
         companyId = creator.companyId;
     } else {
-        // The admin must specify the targeted company
         companyId = companyIdFromBody;
     }
 
@@ -40,8 +37,7 @@ export async function createApplication(
 }
 
 export async function listApplications(creator: Creator, companyIdFromQuery?: string) {
-    // The webmaster only sees applications for their own company
-    // The admin can target a company via a parameter
+    // Role-scoped company listing
     const companyId = creator.role === 'webmaster' ? creator.companyId : companyIdFromQuery;
 
     if (!companyId) {
@@ -51,14 +47,13 @@ export async function listApplications(creator: Creator, companyIdFromQuery?: st
     return ApplicationModel.find({ companyId }).sort({ createdAt: -1 });
 }
 
-// Get an application ensuring it belongs to the requester's company
 async function getOwnedApplication(applicationId: string, creator: Creator) {
     const application = await ApplicationModel.findById(applicationId);
     if (!application) {
         throw new AppError(404, 'application_not_found', 'Application not found.');
     }
 
-    // A webmaster can only act on applications for their own company
+    // Webmaster ownership check
     if (creator.role === 'webmaster' && application.companyId.toString() !== creator.companyId) {
         throw new AppError(403, 'forbidden', "This application does not belong to your company.");
     }
@@ -66,7 +61,6 @@ async function getOwnedApplication(applicationId: string, creator: Creator) {
     return application;
 }
 
-// Generate (regenerate) secret
 export async function generateApplicationSecret(applicationId: string, creator: Creator) {
     const application = await getOwnedApplication(applicationId, creator);
 
@@ -76,11 +70,9 @@ export async function generateApplicationSecret(applicationId: string, creator: 
     application.appSecretGeneratedAt = new Date();
     await application.save();
 
-    // Return secret in clear
     return { secret, prefix: application.appSecretPrefix };
 }
 
-// Delete secret
 export async function deleteApplicationSecret(applicationId: string, creator: Creator) {
     const application = await getOwnedApplication(applicationId, creator);
 

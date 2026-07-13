@@ -1,0 +1,38 @@
+services:
+  api:
+    image: ghcr.io/noanwastaken/m1s2-api:latest
+    container_name: m1s2_api
+    restart: unless-stopped
+    networks:
+      - web
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+      MONGODB_URI: ${MONGODB_URI}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      CORS_DASHBOARD_ORIGIN: ${CORS_DASHBOARD_ORIGIN}
+      APP_WEB_URL: ${APP_WEB_URL}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN}
+      MAIL_FROM: ${MAIL_FROM:-onboarding@noandelatouche.dev}
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  dashboard:
+    image: ghcr.io/noanwastaken/m1s2-dashboard:latest
+    container_name: m1s2_dashboard
+    restart: unless-stopped
+    networks:
+      - web
+    environment:
+      NODE_ENV: production
+    depends_on:
+      api:
+        condition: service_healthy
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+networks:
+  web:
+    external: true

@@ -1,0 +1,24 @@
+{
+    "compilerOptions": {
+        "target": "ES2020",
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
+        "lib": [
+            "ES2020",
+            "DOM"
+        ],
+        "strict": true,
+        "declaration": true,
+        "outDir": "dist",
+        "rootDir": "src"
+    },
+    "include": [
+        "src"
+    ],
+    "exclude": [
+        "src/**/*.test.ts",
+        "src/test-setup.ts",
+        "src/test-helpers.ts",
+        "src/script.ts"
+    ]
+}
