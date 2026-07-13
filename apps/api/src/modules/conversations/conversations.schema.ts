@@ -24,6 +24,12 @@ export const conversationQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
+export const callSignalSchema = z.object({
+  type: z.enum(['offer', 'answer', 'candidate', 'state']),
+  payload: z.unknown(),
+  sessionId: z.string().min(1).optional(),
+});
+
 export type CreateConversationInput = z.infer<typeof createConversationSchema>;
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 export type UpdateStatusInput = z.infer<typeof updateStatusSchema>;

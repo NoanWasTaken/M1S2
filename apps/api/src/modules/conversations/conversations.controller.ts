@@ -6,6 +6,7 @@ import {
   updateStatusSchema,
   assignConversationSchema,
   conversationQuerySchema,
+  callSignalSchema,
 } from './conversations.schema.js';
 import {
   listConversations,
@@ -18,6 +19,7 @@ import {
   assignConversation,
   getUnreadCount,
   sendTypingIndicator,
+  sendCallSignal,
 } from './conversations.service.js';
 
 function creator(req: Request) {
@@ -110,5 +112,21 @@ export async function getUnreadCountHandler(req: Request, res: Response) {
 export async function postTypingIndicator(req: Request, res: Response) {
   const isTyping = req.body?.isTyping === true;
   await sendTypingIndicator(req.params.id as string, creator(req), isTyping);
+  res.json({ ok: true });
+}
+
+export async function postCallSignal(req: Request, res: Response) {
+  const result = callSignalSchema.safeParse(req.body);
+  if (!result.success) {
+    throw new AppError(400, 'invalid_input', result.error.issues[0]?.message ?? 'Invalid call signal.');
+  }
+
+  const callData: { type: 'offer' | 'answer' | 'candidate' | 'state'; payload: unknown; sessionId?: string } = {
+    type: result.data.type,
+    payload: result.data.payload,
+    sessionId: result.data.sessionId,
+  };
+
+  await sendCallSignal(req.params.id as string, creator(req), callData);
   res.json({ ok: true });
 }

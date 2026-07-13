@@ -70,10 +70,10 @@ export async function createInternalConversation(subject: string, initialMessage
   return res.data.conversation;
 }
 
-export async function sendMessage(conversationId: string, content: string) {
+export async function sendMessage(conversationId: string, content: string, type: Message['type'] = 'text') {
   const res = await api.post<{ message: Message }>(
     `/api/v1/conversations/${conversationId}/messages`,
-    { content },
+    { content, type },
   );
   return res.data.message;
 }
@@ -109,4 +109,13 @@ export async function getUnreadCount() {
 
 export async function sendTyping(conversationId: string, isTyping: boolean) {
   await api.post(`/api/v1/conversations/${conversationId}/typing`, { isTyping });
+}
+
+export async function sendCallSignal(
+  conversationId: string,
+  type: 'offer' | 'answer' | 'candidate' | 'state',
+  payload: unknown,
+  sessionId?: string,
+) {
+  await api.post(`/api/v1/conversations/${conversationId}/call/signal`, { type, payload, sessionId });
 }

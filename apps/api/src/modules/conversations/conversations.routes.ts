@@ -13,6 +13,7 @@ import {
   patchConversationAssign,
   getUnreadCountHandler,
   postTypingIndicator,
+  postCallSignal,
 } from './conversations.controller.js';
 
 const router = Router();
@@ -31,6 +32,7 @@ router.get('/:id', getConversationById);
 router.get('/:id/messages', getConversationMessages);
 router.post('/:id/messages', postConversationMessage);
 router.post('/:id/typing', postTypingIndicator);
+router.post('/:id/call/signal', postCallSignal);
 
 
 export default router;
