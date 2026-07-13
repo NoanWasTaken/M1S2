@@ -414,6 +414,16 @@
     "resetRange": "Réinitialiser",
     "durationZero": "0 s",
     "durationMinutesSeconds": "{minutes} min {seconds} s",
-    "durationSecondsOnly": "{seconds} s"
+    "durationSecondsOnly": "{seconds} s",
+    "exportCsv": "Export CSV",
+    "exportPdf": "Export PDF",
+    "exporting": "Export…"
+  },
+  "metrics": {
+    "pageview": "Pages vues",
+    "click": "Clics",
+    "hover": "Survols",
+    "page_exit": "Sorties",
+    "tabchange": "Changements d'onglet"
   }
 }

@@ -1,4 +1,4 @@
-import { api } from './api-client';
+import { api, getAccessToken } from './api-client';
 
 export interface PageRow {
     url: string;
@@ -82,4 +82,53 @@ export async function fetchTimeseries(period: string, opts: TimeseriesOptions = 
         },
     );
     return res.data;
+}
+
+export type ExportResource = 'pages' | 'events';
+export type ExportFormat = 'csv' | 'pdf';
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+export async function exportAnalytics(
+    resource: ExportResource,
+    format: ExportFormat,
+    period: string,
+    appId?: string,
+): Promise<string> {
+    const params = new URLSearchParams({ format, period });
+    if (appId) params.set('appId', appId);
+
+    const url = `${BASE_URL}/api/v1/analytics/${resource}/export?${params.toString()}`;
+    const token = getAccessToken();
+
+    const response = await fetch(url, {
+        method: 'GET',
+        credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    if (!response.ok) {
+        throw new Error(`Export failed: ${response.status}`);
+    }
+
+    const buffer = await response.arrayBuffer();
+
+    const mimeType = format === 'pdf' ? 'application/pdf' : 'text/csv;charset=utf-8;';
+    const blob = new Blob([buffer], { type: mimeType });
+
+    const disposition = response.headers.get('content-disposition') ?? '';
+    const match = disposition.match(/filename="?([^";\n]+)"?/);
+    const today = new Date().toISOString().slice(0, 10);
+    const filename = match?.[1] ?? `${resource}-export-${today}.${format}`;
+
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+
+    return filename;
 }

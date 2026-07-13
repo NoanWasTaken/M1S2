@@ -7,6 +7,7 @@ import { useDashboardStream } from '@/lib/dashboard-stream';
 import {
     fetchPages,
     fetchTimeseries,
+    exportAnalytics,
     type PageRow,
     type PagesTotals,
     type ClickedElement,
@@ -106,6 +107,57 @@ function TopElements({ elements }: { elements: ClickedElement[] }) {
         </Card>
     );
 }
+
+function ExportButtons({ period, appId }: { period: string; appId?: string }) {
+    const t = useTranslations('analytics');
+    const [loadingCsv, setLoadingCsv] = useState(false);
+    const [loadingPdf, setLoadingPdf] = useState(false);
+
+    const handleExport = async (format: 'csv' | 'pdf') => {
+        const setLoading = format === 'csv' ? setLoadingCsv : setLoadingPdf;
+        setLoading(true);
+        try {
+            await exportAnalytics('pages', format, period, appId);
+        } catch (err) {
+            console.error('[Export] Error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const btnClass =
+        'flex items-center gap-1.5 rounded-lg border border-border-subtle bg-bg-card px-3 py-1.5 text-xs text-text-secondary transition-colors hover:border-accent hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed';
+
+    return (
+        <div className="flex items-center gap-2">
+            <button
+                type="button"
+                className={btnClass}
+                disabled={loadingCsv}
+                onClick={() => handleExport('csv')}
+                title={t('exportCsv')}
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+                {loadingCsv ? t('exporting') : t('exportCsv')}
+            </button>
+            <button
+                type="button"
+                className={btnClass}
+                disabled={loadingPdf}
+                onClick={() => handleExport('pdf')}
+                title={t('exportPdf')}
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+                {loadingPdf ? t('exporting') : t('exportPdf')}
+            </button>
+        </div>
+    );
+}
+
 
 export default function PagesPage() {
     const t = useTranslations('analytics');
@@ -233,6 +285,8 @@ export default function PagesPage() {
                             </button>
                         )}
                     </div>
+
+                    <ExportButtons period={period} appId={selectedAppId ?? undefined} />
                 </div>
             </div>
 
