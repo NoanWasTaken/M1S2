@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api-client';
 import { useAuth } from '@/providers/auth-provider';
@@ -40,8 +41,10 @@ type Props = {
 
 export function TrackingManager({ mode }: Props) {
     const { user, isAuthenticated, isLoading } = useAuth();
+    const pathname = usePathname();
     const t = useTranslations('tracking');
     const tCommon = useTranslations('common');
+    const tNav = useTranslations('nav');
 
     const [companies, setCompanies] = useState<Company[]>([]);
     const [applications, setApplications] = useState<Application[]>([]);
@@ -307,8 +310,31 @@ export function TrackingManager({ mode }: Props) {
     const secondaryCount = mode === 'tags' ? funnels.length : tags.length;
     const tertiaryCount = mode === 'tags' ? availableTagIds.length : selectedTags.length;
 
+    const navItems = [
+        { href: '/tags', label: tNav('tags') },
+        { href: '/funnels', label: tNav('funnels') },
+    ];
+
     return (
         <div className="flex flex-col gap-4 p-6">
+            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border-subtle bg-bg-card/70 p-1.5">
+                {navItems.map((item) => {
+                    const isActive = pathname === item.href;
+                    return (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`rounded-xl px-3 py-2 text-sm font-medium transition-colors ${isActive
+                                ? 'bg-accent text-[#05070d]'
+                                : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary'
+                                }`}
+                        >
+                            {item.label}
+                        </Link>
+                    );
+                })}
+            </div>
+
             <div className="flex items-center justify-between border-b border-border-subtle bg-[var(--bg-page)] px-6 py-4">
                 <div className="flex items-center gap-2">
                     <h1 className="text-xl font-semibold text-text-primary">
