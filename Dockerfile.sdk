@@ -1,7 +1,7 @@
 FROM node:24-alpine AS builder
 WORKDIR /app
 
-COPY package.json tsconfig.base.json ./
+COPY .npmrc package.json tsconfig.base.json ./
 COPY packages/sdk-frontend packages/sdk-frontend
 
 RUN npm install --workspace=packages/sdk-frontend
