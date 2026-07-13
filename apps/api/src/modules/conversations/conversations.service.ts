@@ -35,7 +35,6 @@ export async function listConversations(user: Creator, query: { status?: string;
   if (user.role === 'webmaster') {
     filter.companyId = user.companyId;
 
-    // Member: own internal only
     if (isMember(user)) {
       filter.kind = 'internal';
       filter.userId = user.userId;
@@ -201,6 +200,13 @@ export async function updateConversationStatus(
   status: 'open' | 'closed',
 ) {
   const conversation = await getConversation(conversationId, user);
+  if (
+    status === 'open' &&
+    user.role === 'webmaster' &&
+    conversation.userId.toString() === user.userId
+  ) {
+    throw new AppError(403, 'forbidden', 'You cannot accept your own request.');
+  }
 
   if (status === 'open' && conversation.status !== 'waiting') {
     throw new AppError(400, 'invalid_status', 'Only waiting conversations can be opened.');
@@ -212,7 +218,9 @@ export async function updateConversationStatus(
   const update: Record<string, unknown> = { status };
   if (status === 'open') {
     update.openedAt = new Date();
-    update.assignedTo = user.userId;
+    if (!conversation.assignedTo) {
+      update.assignedTo = user.userId;
+    }
   }
   if (status === 'closed') {
     update.closedAt = new Date();
@@ -264,7 +272,7 @@ export async function assignConversation(
 }
 
 export async function getUnreadCount(user: Creator) {
-  const filter: Record<string, unknown> = {};
+  const filter: Record<string, unknown> = { status: 'waiting' };
 
   if (user.role === 'webmaster') {
     filter.companyId = user.companyId;
@@ -272,11 +280,10 @@ export async function getUnreadCount(user: Creator) {
     if (isMember(user)) {
       filter.kind = 'internal';
       filter.userId = user.userId;
+    } else {
+      filter.kind = 'internal';
+      filter.userId = { $ne: user.userId };
     }
-  }
-
-  if (user.role === 'admin') {
-    filter.status = 'waiting';
   }
 
   return ConversationModel.countDocuments(filter);
