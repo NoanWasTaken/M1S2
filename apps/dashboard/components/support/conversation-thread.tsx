@@ -35,13 +35,20 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
   const [callStatus, setCallStatus] = useState<'idle' | 'ringing' | 'connecting' | 'connected' | 'ended'>('idle');
   const [callError, setCallError] = useState<string | null>(null);
   const [showCallView, setShowCallView] = useState(false);
+  const [isSharingScreen, setIsSharingScreen] = useState(false);
+  const [screenShareError, setScreenShareError] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const typingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const callViewRef = useRef<HTMLDivElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
+  const cameraPreviewRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteStreamRef = useRef<MediaStream | null>(null);
+  const screenStreamRef = useRef<MediaStream | null>(null);
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
   const callSessionRef = useRef<{ startedAt: number | null; ended: boolean; hasLoggedStart: boolean; isInitiator: boolean; sessionId: string | null }>({
     startedAt: null,
@@ -54,6 +61,17 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
 
   const handleSend = async () => {
     const content = input.trim();
@@ -137,6 +155,15 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
     await pushSystemMessage('Video call started');
   };
 
+  const stopAllLocalStreams = () => {
+    [cameraStreamRef.current, localStreamRef.current, screenStreamRef.current].forEach((stream) => {
+      stream?.getTracks().forEach((track) => track.stop());
+    });
+    cameraStreamRef.current = null;
+    localStreamRef.current = null;
+    screenStreamRef.current = null;
+  };
+
   const stopCall = (options?: { notifyPeer?: boolean }) => {
     const startedAt = callSessionRef.current.startedAt;
     const hasActiveCall = Boolean(startedAt && !callSessionRef.current.ended);
@@ -162,28 +189,42 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
 
     peerConnectionRef.current?.close();
     peerConnectionRef.current = null;
-    localStreamRef.current?.getTracks().forEach((track) => track.stop());
-    localStreamRef.current = null;
+    stopAllLocalStreams();
     remoteStreamRef.current = null;
     if (localVideoRef.current) localVideoRef.current.srcObject = null;
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
     pendingCandidatesRef.current = [];
+    setIsSharingScreen(false);
+    setScreenShareError(null);
 
     setCallStatus('ended');
     setShowCallView(false);
   };
 
+  const syncLocalVideoDisplays = (sharingScreen: boolean) => {
+    const primaryStream = sharingScreen ? screenStreamRef.current : cameraStreamRef.current;
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = primaryStream ?? null;
+    }
+    if (cameraPreviewRef.current) {
+      cameraPreviewRef.current.srcObject = cameraStreamRef.current ?? null;
+    }
+  };
+
   const ensureMedia = async () => {
-    if (localStreamRef.current) return localStreamRef.current;
+    if (cameraStreamRef.current) {
+      localStreamRef.current = cameraStreamRef.current;
+      syncLocalVideoDisplays(isSharingScreen);
+      return cameraStreamRef.current;
+    }
     if (!navigator.mediaDevices?.getUserMedia) {
       throw new Error('Your browser does not support camera access.');
     }
 
     const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    cameraStreamRef.current = stream;
     localStreamRef.current = stream;
-    if (localVideoRef.current) {
-      localVideoRef.current.srcObject = stream;
-    }
+    syncLocalVideoDisplays(isSharingScreen);
     return stream;
   };
 
@@ -267,6 +308,98 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
     } catch (error) {
       setCallStatus('ended');
       setCallError(error instanceof Error ? error.message : 'Unable to start the call.');
+    }
+  };
+
+  const handleShareScreen = async (withAudio: boolean) => {
+    if (!peerConnectionRef.current) return;
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      setScreenShareError('Your browser does not support screen sharing.');
+      return;
+    }
+
+    try {
+      setScreenShareError(null);
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: withAudio });
+      screenStreamRef.current = stream;
+      setIsSharingScreen(true);
+      syncLocalVideoDisplays(true);
+
+      const pc = peerConnectionRef.current;
+      const videoTrack = stream.getVideoTracks()[0];
+      const audioTrack = stream.getAudioTracks()[0];
+
+      pc.getSenders().forEach((sender) => {
+        if (sender.track?.kind === 'video' && videoTrack) {
+          void sender.replaceTrack(videoTrack);
+        }
+        if (sender.track?.kind === 'audio' && audioTrack) {
+          void sender.replaceTrack(audioTrack);
+        }
+      });
+
+      const stopOnEnd = () => {
+        void stopScreenShare();
+      };
+      stream.getVideoTracks().forEach((track) => track.addEventListener('ended', stopOnEnd));
+      stream.getAudioTracks().forEach((track) => track.addEventListener('ended', stopOnEnd));
+    } catch (error) {
+      setScreenShareError(error instanceof Error ? error.message : 'Unable to share your screen.');
+    }
+  };
+
+  const stopScreenShare = async () => {
+    const stream = screenStreamRef.current;
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+    screenStreamRef.current = null;
+    setIsSharingScreen(false);
+    syncLocalVideoDisplays(false);
+
+    const pc = peerConnectionRef.current;
+    const cameraStream = cameraStreamRef.current;
+    if (!pc || !cameraStream) return;
+
+    const videoTrack = cameraStream.getVideoTracks()[0];
+    const audioTrack = cameraStream.getAudioTracks()[0];
+
+    pc.getSenders().forEach((sender) => {
+      if (sender.track?.kind === 'video' && videoTrack) {
+        void sender.replaceTrack(videoTrack);
+      }
+      if (sender.track?.kind === 'audio' && audioTrack) {
+        void sender.replaceTrack(audioTrack);
+      }
+    });
+
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = cameraStream;
+    }
+    if (cameraPreviewRef.current) {
+      cameraPreviewRef.current.srcObject = cameraStream;
+    }
+  };
+
+  const toggleFullscreen = async () => {
+    const element = callViewRef.current;
+    if (!element) return;
+
+    if (!document.fullscreenElement) {
+      try {
+        await element.requestFullscreen();
+        setIsFullscreen(true);
+      } catch {
+        setScreenShareError('Unable to enter fullscreen mode.');
+      }
+      return;
+    }
+
+    try {
+      await document.exitFullscreen();
+      setIsFullscreen(false);
+    } catch {
+      setScreenShareError('Unable to exit fullscreen mode.');
     }
   };
 
@@ -433,7 +566,7 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
 
       {showCallView && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6">
-          <div className="flex h-full w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border-subtle bg-bg-sidebar shadow-2xl">
+          <div ref={callViewRef} className="flex h-full w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border-subtle bg-bg-sidebar shadow-2xl">
             <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
               <div>
                 <p className="text-sm font-semibold text-text-primary">
@@ -443,35 +576,98 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
                   {callError ?? 'The conversation stays in the background while the call is open.'}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => stopCall()}
-                className="rounded-md border border-border-subtle px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
-              >
-                {callStatus === 'connected' || callStatus === 'ringing' || callStatus === 'connecting' ? 'End call' : 'Close'}
-              </button>
-            </div>
-
-            <div className="flex-1 p-4">
-              <div className="grid h-full gap-4 lg:grid-cols-2">
-                <div className="relative flex min-h-[220px] items-center justify-center overflow-hidden rounded-xl bg-black">
-                  <video ref={localVideoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
-                  <div className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">You</div>
-                </div>
-                <div className="relative flex min-h-[220px] items-center justify-center overflow-hidden rounded-xl border border-border-subtle bg-bg-card">
-                  <video ref={remoteVideoRef} autoPlay playsInline className="h-full w-full object-cover" />
-                  {!remoteStreamRef.current && (
-                    <div className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-text-secondary">
-                      Waiting for the other participant to join the call.
-                    </div>
-                  )}
-                  <div className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">Guest</div>
-                </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void toggleFullscreen()}
+                  className="rounded-md border border-border-subtle px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
+                >
+                  {isFullscreen ? 'Exit full screen' : 'Full screen'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => stopCall()}
+                  className="rounded-md border border-border-subtle px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
+                >
+                  {callStatus === 'connected' || callStatus === 'ringing' || callStatus === 'connecting' ? 'End call' : 'Close'}
+                </button>
               </div>
             </div>
 
+            <div className="flex-1 p-4">
+              {isSharingScreen ? (
+                <div className="flex h-full flex-col gap-4">
+                  <div className="relative flex-1 overflow-hidden rounded-xl bg-black">
+                    <video ref={localVideoRef} autoPlay muted playsInline className="h-full w-full object-contain" />
+                    <div className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">Shared screen</div>
+                    {cameraStreamRef.current ? (
+                      <div className="absolute bottom-4 right-4 h-28 w-20 overflow-hidden rounded-xl border border-white/20 bg-black shadow-2xl sm:h-36 sm:w-24">
+                        <video ref={cameraPreviewRef} autoPlay muted playsInline className="h-full w-full object-cover" />
+                        <div className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-1 text-[10px] font-medium text-white">Camera</div>
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="relative min-h-[180px] overflow-hidden rounded-xl border border-border-subtle bg-bg-card">
+                    <video ref={remoteVideoRef} autoPlay playsInline className="h-full w-full object-cover" />
+                    {!remoteStreamRef.current && (
+                      <div className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-text-secondary">
+                        Waiting for the other participant to join the call.
+                      </div>
+                    )}
+                    <div className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">Guest</div>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid h-full gap-4 lg:grid-cols-2">
+                  <div className="relative flex min-h-[220px] items-center justify-center overflow-hidden rounded-xl bg-black">
+                    <video ref={localVideoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
+                    <div className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">You</div>
+                  </div>
+                  <div className="relative flex min-h-[220px] items-center justify-center overflow-hidden rounded-xl border border-border-subtle bg-bg-card">
+                    <video ref={remoteVideoRef} autoPlay playsInline className="h-full w-full object-cover" />
+                    {!remoteStreamRef.current && (
+                      <div className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-text-secondary">
+                        Waiting for the other participant to join the call.
+                      </div>
+                    )}
+                    <div className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">Guest</div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="border-t border-border-subtle px-4 py-3">
-              <div className="flex items-center justify-end gap-2">
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {user?.role !== 'admin' && (
+                  <>
+                    {isSharingScreen ? (
+                      <button
+                        type="button"
+                        onClick={() => void stopScreenShare()}
+                        className="rounded-md border border-border-subtle px-3 py-1.5 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
+                      >
+                        Stop sharing
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => void handleShareScreen(false)}
+                          className="rounded-md border border-border-subtle px-3 py-1.5 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
+                        >
+                          Share screen
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleShareScreen(true)}
+                          className="rounded-md border border-border-subtle px-3 py-1.5 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
+                        >
+                          Share screen + audio
+                        </button>
+                      </>
+                    )}
+                  </>
+                )}
                 <button
                   type="button"
                   onClick={callStatus === 'connected' || callStatus === 'ringing' || callStatus === 'connecting' ? () => stopCall() : () => void handleStartCall()}
@@ -480,6 +676,9 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
                   {callStatus === 'connected' || callStatus === 'ringing' || callStatus === 'connecting' ? 'End call' : 'Start call'}
                 </button>
               </div>
+              {screenShareError ? (
+                <p className="mt-2 text-right text-xs text-red-500">{screenShareError}</p>
+              ) : null}
             </div>
           </div>
         </div>
