@@ -21,8 +21,6 @@ function SourceBadge({ source }: { source: 'browser' | 'server' }) {
     );
 }
 
-// ─── Boutons export ──────────────────────────────────────────────────────────
-
 function ExportButtons({ period, appId }: { period: string; appId?: string }) {
     const t = useTranslations('analytics');
     const [loadingCsv, setLoadingCsv] = useState(false);
@@ -73,7 +71,6 @@ function ExportButtons({ period, appId }: { period: string; appId?: string }) {
     );
 }
 
-// ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function EventsPage() {
     const t = useTranslations('analytics');
