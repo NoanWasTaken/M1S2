@@ -425,5 +425,18 @@
     "hover": "Survols",
     "page_exit": "Sorties",
     "tabchange": "Changements d'onglet"
+  },
+  "funnel": {
+    "title": "Funnel Analytics",
+    "selectFunnel": "Sélectionner un funnel",
+    "noFunnel": "Aucun funnel disponible. Créez-en un dans Tracking > Funnels.",
+    "noData": "Aucune donnée pour ce funnel sur cette période.",
+    "step": "Étape",
+    "sessions": "Sessions",
+    "conversionRate": "Taux de conversion",
+    "dropRate": "Abandon",
+    "entrants": "Entrants",
+    "converted": "Convertis",
+    "loading": "Chargement…"
   }
 }

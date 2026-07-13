@@ -425,5 +425,18 @@
     "hover": "Hovers",
     "page_exit": "Exits",
     "tabchange": "Tab changes"
+  },
+  "funnel": {
+    "title": "Funnel Analytics",
+    "selectFunnel": "Select a funnel",
+    "noFunnel": "No funnel available. Create one in Tracking > Funnels.",
+    "noData": "No data for this funnel on this period.",
+    "step": "Step",
+    "sessions": "Sessions",
+    "conversionRate": "Conversion rate",
+    "dropRate": "Drop rate",
+    "entrants": "Entrants",
+    "converted": "Converted",
+    "loading": "Loading…"
   }
 }
