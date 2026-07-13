@@ -27,6 +27,7 @@ export const conversationQuerySchema = z.object({
 export const callSignalSchema = z.object({
   type: z.enum(['offer', 'answer', 'candidate', 'state']),
   payload: z.unknown(),
+  sessionId: z.string().min(1).optional(),
 });
 
 export type CreateConversationInput = z.infer<typeof createConversationSchema>;

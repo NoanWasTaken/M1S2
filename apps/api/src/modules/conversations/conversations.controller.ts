@@ -121,9 +121,10 @@ export async function postCallSignal(req: Request, res: Response) {
     throw new AppError(400, 'invalid_input', result.error.issues[0]?.message ?? 'Invalid call signal.');
   }
 
-  const callData: { type: 'offer' | 'answer' | 'candidate' | 'state'; payload: unknown } = {
+  const callData: { type: 'offer' | 'answer' | 'candidate' | 'state'; payload: unknown; sessionId?: string } = {
     type: result.data.type,
     payload: result.data.payload,
+    sessionId: result.data.sessionId,
   };
 
   await sendCallSignal(req.params.id as string, creator(req), callData);

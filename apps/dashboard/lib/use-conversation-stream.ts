@@ -38,6 +38,7 @@ export type SupportCallSignalEvent = {
   senderRole: 'webmaster' | 'admin';
   type: 'offer' | 'answer' | 'candidate' | 'state';
   payload: unknown;
+  sessionId?: string;
 };
 
 type UseConversationStreamOptions = {

@@ -299,7 +299,7 @@ export async function sendTypingIndicator(
 export async function sendCallSignal(
   conversationId: string,
   user: Creator,
-  data: { type: 'offer' | 'answer' | 'candidate' | 'state'; payload: unknown },
+  data: { type: 'offer' | 'answer' | 'candidate' | 'state'; payload: unknown; sessionId?: string },
 ) {
   await getConversation(conversationId, user);
 
@@ -309,5 +309,6 @@ export async function sendCallSignal(
     senderRole: user.role,
     type: data.type,
     payload: data.payload,
+    sessionId: data.sessionId,
   });
 }
