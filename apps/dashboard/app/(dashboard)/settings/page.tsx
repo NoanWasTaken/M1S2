@@ -84,7 +84,6 @@ function accountStatusLabel(status: string, t: ReturnType<typeof useTranslations
     return status;
 }
 
-// ─── Alert Slider ────────────────────────────────────────────────────────────
 
 function AlertSlider({ appId }: { appId: string }) {
     const t = useTranslations('alert');
@@ -210,8 +209,6 @@ function AlertSlider({ appId }: { appId: string }) {
     );
 }
 
-// ─── AccountCard ─────────────────────────────────────────────────────────────
-
 function AccountCard({ me }: { me: Me }) {
     const t = useTranslations('settings');
 
@@ -241,8 +238,6 @@ function AccountCard({ me }: { me: Me }) {
     );
 }
 
-// ─── CompanyCard ─────────────────────────────────────────────────────────────
-
 function CompanyCard({ company }: { company: Company }) {
     const t = useTranslations('settings');
     return (
@@ -270,7 +265,6 @@ function CompanyCard({ company }: { company: Company }) {
     );
 }
 
-// ─── ApplicationRow ───────────────────────────────────────────────────────────
 
 function ApplicationRow({ app, onChanged, readOnly }: { app: App; onChanged: () => void; readOnly?: boolean }) {
     const t = useTranslations('settings');
@@ -461,8 +455,6 @@ function ApplicationRow({ app, onChanged, readOnly }: { app: App; onChanged: () 
     );
 }
 
-// ─── ApplicationsSection ──────────────────────────────────────────────────────
-
 function ApplicationsSection({ apps, onChanged, readOnly }: { apps: App[]; onChanged: () => void; readOnly?: boolean }) {
     const t = useTranslations('settings');
     const [newName, setNewName] = useState('');
@@ -516,8 +508,6 @@ function ApplicationsSection({ apps, onChanged, readOnly }: { apps: App[]; onCha
         </Card>
     );
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
     const t = useTranslations('settings');
