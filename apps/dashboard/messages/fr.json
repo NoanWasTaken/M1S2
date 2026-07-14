@@ -484,6 +484,8 @@
     "save": "Enregistrer",
     "saving": "Enregistrement…",
     "saved": "Enregistré ✓",
-    "deleteAlert": "Supprimer l'alerte"
+    "deleteAlert": "Supprimer l'alerte",
+    "enableAlert": "Activer",
+    "disableAlert": "Désactiver"
   }
 }

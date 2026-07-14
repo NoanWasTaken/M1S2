@@ -484,6 +484,8 @@
     "save": "Save",
     "saving": "Saving…",
     "saved": "Saved ✓",
-    "deleteAlert": "Delete alert"
+    "deleteAlert": "Delete alert",
+    "enableAlert": "Enable",
+    "disableAlert": "Disable"
   }
 }

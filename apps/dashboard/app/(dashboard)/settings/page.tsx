@@ -84,6 +84,134 @@ function accountStatusLabel(status: string, t: ReturnType<typeof useTranslations
     return status;
 }
 
+// ─── Alert Slider ────────────────────────────────────────────────────────────
+
+function AlertSlider({ appId }: { appId: string }) {
+    const t = useTranslations('alert');
+    const [threshold, setThreshold] = useState(50);
+    const [enabled, setEnabled] = useState(false);
+    const [loaded, setLoaded] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [saved, setSaved] = useState(false);
+
+    useEffect(() => {
+        api.get<{ threshold: { threshold: number; enabled: boolean; cooldownMs: number } | null }>(
+            `/api/v1/alerts/${appId}`,
+        )
+            .then((res) => {
+                if (res.data.threshold) {
+                    setThreshold(res.data.threshold.threshold);
+                    setEnabled(res.data.threshold.enabled);
+                }
+                setLoaded(true);
+            })
+            .catch(() => setLoaded(true));
+    }, [appId]);
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            await api.put(`/api/v1/alerts/${appId}`, {
+                appId,
+                threshold,
+                enabled,
+                cooldownMs: 5 * 60 * 1000,
+            });
+            setSaved(true);
+            setTimeout(() => setSaved(false), 2000);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        await api.delete(`/api/v1/alerts/${appId}`);
+        setEnabled(false);
+        setThreshold(50);
+    };
+
+    if (!loaded) return null;
+
+    const SLIDER_MIN = 1;
+    const SLIDER_MAX = 500;
+    const pct = ((threshold - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN)) * 100;
+
+    return (
+        <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+                <span className="text-xs uppercase tracking-wider text-text-secondary">{t('settingsTitle')}</span>
+                <button
+                    type="button"
+                    onClick={() => setEnabled((v) => !v)}
+                    className={`rounded-md border px-3 py-1 text-xs font-medium transition-colors ${
+                        enabled
+                            ? 'border-danger/40 text-danger hover:bg-danger/10'
+                            : 'border-success/40 text-success hover:bg-success/10'
+                    }`}
+                >
+                    {enabled ? t('disableAlert') : t('enableAlert')}
+                </button>
+            </div>
+
+            <div className={`flex flex-col gap-3 transition-opacity ${enabled ? 'opacity-100' : 'opacity-40'}`}>
+                <div className="flex items-center justify-between">
+                    <span className="text-xs text-text-secondary">{t('thresholdLabel')}</span>
+                    <span className="font-mono text-sm font-semibold text-accent">{threshold}</span>
+                </div>
+
+                <div className="relative h-6 w-full">
+                    <div className="absolute top-1/2 h-1.5 w-full -translate-y-1/2 overflow-hidden rounded-full bg-bg-hover">
+                        <div
+                            className="h-full rounded-full bg-accent"
+                            style={{ width: `${pct}%` }}
+                        />
+                    </div>
+                    <input
+                        type="range"
+                        min={SLIDER_MIN}
+                        max={SLIDER_MAX}
+                        value={threshold}
+                        disabled={!enabled}
+                        onChange={(e) => setThreshold(Number(e.target.value))}
+                        className="absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent disabled:cursor-not-allowed [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:shadow-md"
+                    />
+                </div>
+
+                <div className="flex justify-between text-[10px] text-text-tertiary">
+                    <span>{SLIDER_MIN}</span>
+                    <span>100</span>
+                    <span>200</span>
+                    <span>300</span>
+                    <span>400</span>
+                    <span>{SLIDER_MAX}</span>
+                </div>
+
+                <p className="text-xs text-text-tertiary">{t('thresholdHint')}</p>
+            </div>
+
+            <div className="flex items-center gap-2">
+                <button
+                    type="button"
+                    disabled={saving}
+                    onClick={handleSave}
+                    className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-[#05070d] transition-opacity hover:opacity-90 disabled:opacity-50"
+                >
+                    {saved ? t('saved') : saving ? t('saving') : t('save')}
+                </button>
+                <button
+                    type="button"
+                    onClick={handleDelete}
+                    className="text-xs text-danger hover:underline"
+                >
+                    {t('deleteAlert')}
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// ─── AccountCard ─────────────────────────────────────────────────────────────
+
 function AccountCard({ me }: { me: Me }) {
     const t = useTranslations('settings');
 
@@ -113,6 +241,8 @@ function AccountCard({ me }: { me: Me }) {
     );
 }
 
+// ─── CompanyCard ─────────────────────────────────────────────────────────────
+
 function CompanyCard({ company }: { company: Company }) {
     const t = useTranslations('settings');
     return (
@@ -139,6 +269,8 @@ function CompanyCard({ company }: { company: Company }) {
         </Card>
     );
 }
+
+// ─── ApplicationRow ───────────────────────────────────────────────────────────
 
 function ApplicationRow({ app, onChanged, readOnly }: { app: App; onChanged: () => void; readOnly?: boolean }) {
     const t = useTranslations('settings');
@@ -274,53 +406,62 @@ function ApplicationRow({ app, onChanged, readOnly }: { app: App; onChanged: () 
                     )
                 ) : (
                     <>
-                {origins.length > 0 ? (
-                    <div className="flex flex-col gap-1">
-                        {origins.map((o) => (
-                            <div key={o} className="flex items-center justify-between rounded-md bg-bg-card px-2 py-1.5">
-                                <code className="font-mono text-xs text-text-primary">{o}</code>
-                                <button
-                                    type="button"
-                                    onClick={() => saveOrigins(origins.filter((x) => x !== o))}
-                                    disabled={busy}
-                                    className="text-xs text-danger hover:underline disabled:opacity-50"
-                                >
-                                    {t('remove')}
-                                </button>
+                        {origins.length > 0 ? (
+                            <div className="flex flex-col gap-1">
+                                {origins.map((o) => (
+                                    <div key={o} className="flex items-center justify-between rounded-md bg-bg-card px-2 py-1.5">
+                                        <code className="font-mono text-xs text-text-primary">{o}</code>
+                                        <button
+                                            type="button"
+                                            onClick={() => saveOrigins(origins.filter((x) => x !== o))}
+                                            disabled={busy}
+                                            className="text-xs text-danger hover:underline disabled:opacity-50"
+                                        >
+                                            {t('remove')}
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
-                    </div>
-                ) : (
-                    <span className="text-xs text-text-tertiary">{t('noOrigin')}</span>
-                )}
-                <div className="flex items-center gap-2">
-                    <input
-                        value={newOrigin}
-                        onChange={(e) => setNewOrigin(e.target.value)}
-                        placeholder={t('originPlaceholder')}
-                        className="flex-1 rounded-md border border-border-subtle bg-bg-card px-2 py-1.5 text-xs text-text-primary placeholder:text-text-tertiary focus:border-accent focus:outline-none"
-                    />
-                    <button
-                        type="button"
-                        onClick={() => {
-                            const trimmed = newOrigin.trim();
-                            if (!trimmed || origins.includes(trimmed)) return;
-                            saveOrigins([...origins, trimmed]);
-                            setNewOrigin('');
-                        }}
-                        disabled={busy}
-                        className="rounded-md border border-border-subtle px-3 py-1.5 text-xs text-text-secondary transition-colors hover:text-text-primary disabled:opacity-50"
-                    >
-                        {t('add')}
-                    </button>
-                </div>
-                {savedOrigins && <span className="text-xs text-success">{t('originsSaved')}</span>}
+                        ) : (
+                            <span className="text-xs text-text-tertiary">{t('noOrigin')}</span>
+                        )}
+                        <div className="flex items-center gap-2">
+                            <input
+                                value={newOrigin}
+                                onChange={(e) => setNewOrigin(e.target.value)}
+                                placeholder={t('originPlaceholder')}
+                                className="flex-1 rounded-md border border-border-subtle bg-bg-card px-2 py-1.5 text-xs text-text-primary placeholder:text-text-tertiary focus:border-accent focus:outline-none"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const trimmed = newOrigin.trim();
+                                    if (!trimmed || origins.includes(trimmed)) return;
+                                    saveOrigins([...origins, trimmed]);
+                                    setNewOrigin('');
+                                }}
+                                disabled={busy}
+                                className="rounded-md border border-border-subtle px-3 py-1.5 text-xs text-text-secondary transition-colors hover:text-text-primary disabled:opacity-50"
+                            >
+                                {t('add')}
+                            </button>
+                        </div>
+                        {savedOrigins && <span className="text-xs text-success">{t('originsSaved')}</span>}
                     </>
                 )}
             </div>
+
+            {!readOnly && (
+                <>
+                    <div className="h-px w-full bg-border-subtle" />
+                    <AlertSlider appId={app.appId} />
+                </>
+            )}
         </div>
     );
 }
+
+// ─── ApplicationsSection ──────────────────────────────────────────────────────
 
 function ApplicationsSection({ apps, onChanged, readOnly }: { apps: App[]; onChanged: () => void; readOnly?: boolean }) {
     const t = useTranslations('settings');
@@ -345,22 +486,22 @@ function ApplicationsSection({ apps, onChanged, readOnly }: { apps: App[]; onCha
             <h2 className="text-sm font-semibold text-text-primary">{t('applicationsTitle')}</h2>
 
             {!readOnly && (
-            <div className="flex items-center gap-2">
-                <input
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    placeholder={t('newAppPlaceholder')}
-                    className="flex-1 rounded-md border border-border-subtle bg-bg-card px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-accent focus:outline-none"
-                />
-                <button
-                    type="button"
-                    onClick={createApp}
-                    disabled={creating}
-                    className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-[#05070d] transition-opacity hover:opacity-90 disabled:opacity-50"
-                >
-                    {t('create')}
-                </button>
-            </div>
+                <div className="flex items-center gap-2">
+                    <input
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        placeholder={t('newAppPlaceholder')}
+                        className="flex-1 rounded-md border border-border-subtle bg-bg-card px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-accent focus:outline-none"
+                    />
+                    <button
+                        type="button"
+                        onClick={createApp}
+                        disabled={creating}
+                        className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-[#05070d] transition-opacity hover:opacity-90 disabled:opacity-50"
+                    >
+                        {t('create')}
+                    </button>
+                </div>
             )}
 
             {apps.length === 0 ? (
@@ -375,6 +516,8 @@ function ApplicationsSection({ apps, onChanged, readOnly }: { apps: App[]; onCha
         </Card>
     );
 }
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
     const t = useTranslations('settings');
