@@ -25,6 +25,7 @@ function navItems(role: string | undefined, isMember: boolean): NavItem[] {
     { href: '/events', key: 'events', icon: 'events' },
     { href: '/tags', key: 'tags', icon: 'tags' },
     { href: '/funnels', key: 'funnels', icon: 'funnels' },
+    { href: '/analytics/funnels', key: 'funnelStats', icon: 'funnels' },
     { href: '/support', key: 'support', icon: 'support' },
   ];
 

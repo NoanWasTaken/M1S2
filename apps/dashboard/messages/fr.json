@@ -100,7 +100,8 @@
     "noAppCreate": "Créer une application",
     "companies": "Entreprises",
     "users": "Utilisateurs",
-    "stats": "Statistiques"
+    "stats": "Statistiques",
+    "funnelStats": "Vue de funnel"
   },
   "tracking": {
     "tagsTitle": "Tracking tags",
