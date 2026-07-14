@@ -471,5 +471,21 @@
     "entrants": "Entrants",
     "converted": "Converted",
     "loading": "Loading…"
+  },
+  "alert": {
+    "peakTitle": "Audience peak detected",
+    "peakBody": "{current} simultaneous visitors — threshold of {threshold} exceeded.",
+    "settingsTitle": "Audience peak alerts",
+    "thresholdLabel": "Simultaneous visitors threshold",
+    "thresholdHint": "An alert is sent as soon as this number is reached.",
+    "cooldownLabel": "Delay between alerts (minutes)",
+    "cooldownHint": "Prevents alert spam if the peak persists.",
+    "enabledLabel": "Alerts enabled",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved ✓",
+    "deleteAlert": "Delete alert",
+    "enableAlert": "Enable",
+    "disableAlert": "Disable"
   }
 }

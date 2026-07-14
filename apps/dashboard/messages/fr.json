@@ -471,5 +471,21 @@
     "entrants": "Entrants",
     "converted": "Convertis",
     "loading": "Chargement…"
+  },
+  "alert": {
+    "peakTitle": "Pic d'audience détecté",
+    "peakBody": "{current} visiteurs simultanés — seuil de {threshold} dépassé.",
+    "settingsTitle": "Alertes pic d'audience",
+    "thresholdLabel": "Seuil de visiteurs simultanés",
+    "thresholdHint": "Une alerte est envoyée dès que ce nombre est atteint.",
+    "cooldownLabel": "Délai entre deux alertes (minutes)",
+    "cooldownHint": "Évite le spam d'alertes si le pic persiste.",
+    "enabledLabel": "Alertes activées",
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "saved": "Enregistré ✓",
+    "deleteAlert": "Supprimer l'alerte",
+    "enableAlert": "Activer",
+    "disableAlert": "Désactiver"
   }
 }
