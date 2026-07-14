@@ -1,6 +1,7 @@
 import { EventModel } from '../models/event.js';
 import { ApplicationModel } from '../models/application.js';
 import { pushToAccount } from './sse-registry.js';
+import { checkAudiencePeak } from './peak-detector.js';
 
 const ACTIVE_WINDOW_MS = 5 * 60 * 1000;
 
@@ -42,6 +43,8 @@ export async function emitDashboardUpdate(appId: string): Promise<void> {
       activeVisitors,
       computedAt: new Date().toISOString(),
     });
+
+    void checkAudiencePeak(appId, companyId, activeVisitors);
   } catch (err) {
     console.error('[live-stats] emitDashboardUpdate failed:', err);
   }
