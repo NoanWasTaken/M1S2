@@ -15,6 +15,7 @@ import { fetchDashboardData, mockDashboardData, type DashboardData } from '@/lib
 import { api } from '@/lib/api-client';
 import { useDashboardStream as useDashboardSocket } from '@/lib/dashboard-stream';
 import { useApplications } from '@/providers/application-provider';
+import { AudiencePeakBanner } from '@/components/dashboard/audience-peak-banner';
 
 const COLUMNS = 12;
 
@@ -198,7 +199,7 @@ export default function OverviewPage() {
 
   const dataSources = useMemo(() => buildDataSources(data), [data]);
 
-  const { activeVisitors } = useDashboardSocket({
+  const { activeVisitors, peakAlert } = useDashboardSocket({
     onUpdate: () => {
       fetchDashboardData(period, selectedAppId ?? undefined).then(setData).catch(() => { });
     },
@@ -232,6 +233,7 @@ export default function OverviewPage() {
       )}
 
       <HelpButton />
+      <AudiencePeakBanner alert={peakAlert} />
     </>
   );
 }
