@@ -25,6 +25,7 @@ function navItems(role: string | undefined, isMember: boolean): NavItem[] {
     { href: '/events', key: 'events', icon: 'events' },
     { href: '/tags', key: 'tags', icon: 'tags' },
     { href: '/funnels', key: 'funnels', icon: 'funnels' },
+    { href: '/analytics/funnels', key: 'funnelStats', icon: 'funnelsview' },
     { href: '/support', key: 'support', icon: 'support' },
   ];
 
@@ -64,6 +65,11 @@ const iconMap: Record<string, React.ReactNode> = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M4 4h16l-6 7v5l-4 3V11L4 4z" />
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 12h6" />
     </svg>
+  ),
+  funnelsview: (
+  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h12M4 14h8M4 18h4" />
+  </svg>
   ),
   support: (
     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

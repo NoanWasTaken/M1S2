@@ -313,6 +313,7 @@ export function TrackingManager({ mode }: Props) {
     const navItems = [
         { href: '/tags', label: tNav('tags') },
         { href: '/funnels', label: tNav('funnels') },
+        { href: '/analytics/funnels', label: tNav('funnelStats') },
     ];
 
     return (
