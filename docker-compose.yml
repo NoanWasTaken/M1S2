@@ -33,6 +33,15 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 
+  sdk:
+    image: ghcr.io/noanwastaken/m1s2-sdk:latest
+    container_name: m1s2_sdk
+    restart: unless-stopped
+    networks:
+      - web
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
 networks:
   web:
     external: true
