@@ -1,7 +1,6 @@
 import { AlertThresholdModel } from '../models/alert-threshold.js';
 import { pushToAccount } from './sse-registry.js';
 
-const ACTIVE_WINDOW_MS = 5 * 60 * 1000;
 
 export async function checkAudiencePeak(
     appId: string,
