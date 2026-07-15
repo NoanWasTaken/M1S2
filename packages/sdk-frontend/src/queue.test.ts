@@ -55,7 +55,7 @@ describe('EventQueue', () => {
         expect(body.events.map((e: TrackedEvent) => e.type)).toEqual(['pageview', 'click', 'hover']);
     });
 
-    it('uses sendBeacon on pagehide flush', () => {
+    it('uses sendBeacon on pagehide flush', async () => {
         const queue = new EventQueue(CONFIG);
         queue.start();
         queue.add(makeEvent('page_exit'));
@@ -67,7 +67,8 @@ describe('EventQueue', () => {
 
         const [url, body] = vi.mocked(navigator.sendBeacon).mock.calls[0];
         expect(url).toBe(CONFIG.endpoint);
-        expect(JSON.parse(body as string).events[0].type).toBe('page_exit');
+        const text = await (body as Blob).text();
+        expect(JSON.parse(text).events[0].type).toBe('page_exit');
     });
 
     it('flushes periodically via setInterval', async () => {

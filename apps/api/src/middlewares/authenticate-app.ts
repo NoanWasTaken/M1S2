@@ -3,7 +3,7 @@ import { ApplicationModel } from '../models/application.js';
 import { AppError } from '../utils/app-error.js';
 
 export async function authenticateApp(req: Request, _res: Response, next: NextFunction) {
-    const appId = req.header('x-app-id');
+    const appId = req.header('x-app-id') ?? req.body?.app_id;
     if (!appId) {
         throw new AppError(401, 'missing_app_id', 'Missing APP_ID.');
     }

@@ -57,7 +57,7 @@ describe('analytix.js IIFE bundle', () => {
         expect(typeof window.Analytix?.parseScriptConfig).toBe('function');
     });
 
-    it('auto-inits from data attributes on the executing script tag', () => {
+    it('auto-inits from data attributes on the executing script tag', async () => {
         runInlineBundle({
             'data-app-id': 'app_auto',
             'data-endpoint': 'https://api.example.com/ingestion/browser',
@@ -67,7 +67,8 @@ describe('analytix.js IIFE bundle', () => {
         window.dispatchEvent(new Event('pagehide'));
 
         expect(navigator.sendBeacon).toHaveBeenCalled();
-        const body = JSON.parse(vi.mocked(navigator.sendBeacon).mock.calls[0][1] as string);
+        const text = await (vi.mocked(navigator.sendBeacon).mock.calls[0][1] as Blob).text();
+        const body = JSON.parse(text);
         const types = body.events.map((e: { type: string }) => e.type);
         expect(types).toContain('session_start');
         expect(types).toContain('pageview');

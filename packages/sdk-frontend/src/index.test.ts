@@ -35,7 +35,8 @@ describe('Analytics', () => {
         window.dispatchEvent(new Event('pagehide'));
 
         expect(navigator.sendBeacon).toHaveBeenCalled();
-        const body = JSON.parse(vi.mocked(navigator.sendBeacon).mock.calls[0][1] as string);
+        const text = await (vi.mocked(navigator.sendBeacon).mock.calls[0][1] as Blob).text();
+        const body = JSON.parse(text);
         const types = body.events.map((e: { type: string }) => e.type);
 
         expect(types).toContain('session_start');
