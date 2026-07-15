@@ -94,8 +94,8 @@ export async function getPagesData(
                 sessions: { $size: { $ifNull: ['$sessions', []] } },
                 avgDuration: {
                     $let: {
-                        vars: { avgMs: { $avg: '$durations' } },
-                        in: { $round: [{ $divide: [{ $ifNull: ['$$avgMs', 0] }, 1000] }, 0] },
+                        vars: { avgSec: { $avg: '$durations' } },
+                        in: { $round: [{ $ifNull: ['$$avgSec', 0] }, 0] },
                     },
                 },
                 engagement: {

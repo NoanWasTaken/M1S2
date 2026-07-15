@@ -105,7 +105,7 @@ export async function getOverviewData(companyId: string, period: string, appId?:
   };
 
   const avgDurationSec = kpi.uniqueSessions > 0
-    ? Math.round(kpi.totalDuration / kpi.uniqueSessions / 1000)
+    ? Math.round(kpi.totalDuration / kpi.uniqueSessions)
     : 0;
   const avgDurationStr = `${Math.floor(avgDurationSec / 60)}m ${avgDurationSec % 60}s`;
 
@@ -207,7 +207,7 @@ export async function getOverviewData(companyId: string, period: string, appId?:
     '/docs/api': 'Documentation API',
   };
   const topPages = topPagesRaw.map((p, i) => {
-    const dur = p.sessions > 0 ? Math.round(p.totalDuration / p.sessions / 1000) : 0;
+    const dur = p.sessions > 0 ? Math.round(p.totalDuration / p.sessions) : 0;
     return {
       rank: i + 1,
       name: pageLabels[p.url] || p.url,
