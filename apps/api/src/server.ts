@@ -18,6 +18,7 @@ import conversationsRouter from './modules/conversations/conversations.routes.js
 import cookieParser from 'cookie-parser';
 import sseRouter from './realtime/sse.route.js';
 import { startHeartbeat } from './realtime/sse-registry.js';
+import alertRouter from './modules/alerts/alert.routes.js';
 
 const dashboardOrigins = new Set([env.corsOrigin, ...env.corsExtraOrigins]);
 
@@ -58,6 +59,7 @@ async function start() {
   app.use('/api/v1/company', companyRouter);
   app.use('/api/v1/realtime', sseRouter);
   app.use('/api/v1/conversations', conversationsRouter);
+  app.use('/api/v1/alerts', alertRouter);
 
   app.use(errorHandler);
 

@@ -100,7 +100,8 @@
     "noAppCreate": "Create an application",
     "companies": "Companies",
     "users": "Users",
-    "stats": "Statistics"
+    "stats": "Statistics",
+    "funnelStats": "Funnel's view"
   },
   "tracking": {
     "tagsTitle": "Tracking tags",
@@ -457,5 +458,34 @@
     "hover": "Hovers",
     "page_exit": "Exits",
     "tabchange": "Tab changes"
+  },
+  "funnel": {
+    "title": "Funnel Analytics",
+    "selectFunnel": "Select a funnel",
+    "noFunnel": "No funnel available. Create one in Tracking > Funnels.",
+    "noData": "No data for this funnel on this period.",
+    "step": "Step",
+    "sessions": "Sessions",
+    "conversionRate": "Conversion rate",
+    "dropRate": "Drop rate",
+    "entrants": "Entrants",
+    "converted": "Converted",
+    "loading": "Loading…"
+  },
+  "alert": {
+    "peakTitle": "Audience peak detected",
+    "peakBody": "{current} simultaneous visitors — threshold of {threshold} exceeded.",
+    "settingsTitle": "Audience peak alerts",
+    "thresholdLabel": "Simultaneous visitors threshold",
+    "thresholdHint": "An alert is sent as soon as this number is reached.",
+    "cooldownLabel": "Delay between alerts (minutes)",
+    "cooldownHint": "Prevents alert spam if the peak persists.",
+    "enabledLabel": "Alerts enabled",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved ✓",
+    "deleteAlert": "Delete alert",
+    "enableAlert": "Enable",
+    "disableAlert": "Disable"
   }
 }
