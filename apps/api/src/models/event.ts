@@ -9,6 +9,7 @@ const eventSchema = new Schema(
         url: { type: String },
         occurredAt: { type: Date, required: true, index: true },
         source: { type: String, enum: ['browser', 'server'], required: true },
+        country: { type: String, default: null, index: true },
         payload: { type: Schema.Types.Mixed, default: {} },
     },
     { timestamps: true },
@@ -16,6 +17,7 @@ const eventSchema = new Schema(
 
 eventSchema.index({ appId: 1, occurredAt: 1 });
 eventSchema.index({ appId: 1, type: 1, occurredAt: 1 });
+eventSchema.index({ appId: 1, country: 1, occurredAt: 1 });
 
 export type EventDoc = InferSchemaType<typeof eventSchema>;
 export const EventModel = model('Event', eventSchema);

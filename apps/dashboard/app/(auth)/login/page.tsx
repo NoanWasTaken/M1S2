@@ -27,8 +27,8 @@ export default function LoginPage() {
   const onSubmit = form.handleSubmit(async (data) => {
     setApiError(null);
     try {
-      await login(data.email, data.password);
-      router.push('/dashboard');
+      const user = await login(data.email, data.password);
+      router.push(user.role === 'admin' ? '/admin/companies' : '/dashboard');
     } catch (err: unknown) {
       const message =
         err && typeof err === 'object' && 'response' in err

@@ -8,6 +8,7 @@ import { LiveList } from './live-list';
 import { DataTable } from './data-table';
 import { DonutChart } from './donut-chart';
 import { ProgressList } from './progress-list';
+import { GlobeWidget } from './globe-widget';
 import { kpiData, trafficData, activePagesData, topPagesData, trafficSourcesData, devicesData } from '@/lib/mock-data';
 
 type WidgetRendererProps = {
@@ -77,6 +78,8 @@ function renderWidgetBody(type: string, data: unknown, t: ReturnType<typeof useT
       return <DonutChart data={data as typeof trafficSourcesData} />;
     case 'progress-list':
       return <ProgressList data={data as typeof devicesData} />;
+    case 'globe':
+      return <GlobeWidget />;
     default:
       return <p className="text-sm text-text-secondary">{t('unknownWidgetType', { type })}</p>;
   }

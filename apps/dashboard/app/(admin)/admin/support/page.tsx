@@ -189,7 +189,7 @@ export default function AdminSupportPage() {
   }
 
   return (
-    <div className="flex h-[calc(100dvh-3.5rem)] min-h-0 flex-col overflow-hidden lg:h-[calc(100vh-4rem)] lg:flex-row">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
       {pendingCall && pendingCall.conversationId !== activeId && (
         <div className="border-b border-accent/30 bg-accent/10 px-4 py-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

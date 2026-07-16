@@ -5,6 +5,7 @@ import { AppError } from '../../utils/app-error.js';
 import { env } from '../../config/env.js';
 import { UserModel } from '../../models/user.js';
 import { getInvitationDetails, acceptInvitation, verifyEmail } from './invitation.service.js';
+import { isSafeKbisRef } from '../../utils/kbis-storage.js';
 
 const isProd = env.nodeEnv === 'production';
 
@@ -16,6 +17,17 @@ function refreshCookieOptions() {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     ...(isProd && env.cookieDomain ? { domain: env.cookieDomain } : {}),
   };
+}
+
+export async function uploadKbis(req: Request, res: Response) {
+  const file = req.file;
+  if (!file) {
+    throw new AppError(400, 'missing_file', 'KBIS PDF file is required.');
+  }
+  if (!isSafeKbisRef(file.filename)) {
+    throw new AppError(400, 'invalid_file', 'Invalid KBIS file.');
+  }
+  res.status(201).json({ kbisFileRef: file.filename });
 }
 
 export async function register(req: Request, res: Response) {

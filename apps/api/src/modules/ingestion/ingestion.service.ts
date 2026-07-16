@@ -3,7 +3,7 @@ import type { IngestBatchInput } from './ingestion.schema.js';
 import { normalizeUrl } from '../../utils/normalize-url.js';
 import { emitDashboardUpdate } from '../../realtime/live-stats.js';
 
-export async function ingestBrowserEvents(appId: string, batch: IngestBatchInput) {
+export async function ingestBrowserEvents(appId: string, batch: IngestBatchInput, country: string | null = null) {
     const now = new Date();
     const documents = batch.events.map((e) => ({
         appId,
@@ -13,11 +13,11 @@ export async function ingestBrowserEvents(appId: string, batch: IngestBatchInput
         visitorId: e.visitorId,
         sessionId: e.sessionId,
         source: 'browser' as const,
+        country,
         payload: e.payload ?? {},
     }));
     await EventModel.insertMany(documents);
 
-    // Non-blocking live push
     void emitDashboardUpdate(appId);
 
     return { received: documents.length };

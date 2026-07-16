@@ -68,6 +68,22 @@ const T = {
         companyRejectedTitle: 'Demande refusée',
         companyRejectedBody: "Votre demande d'inscription pour <strong>{company}</strong> n'a pas été retenue.",
         companyRejectedOutro: 'Pour en savoir plus, contactez notre équipe.',
+        accountRejectedSubject: 'Votre compte a été refusé',
+        accountRejectedTitle: 'Compte refusé',
+        accountRejectedBody: "Votre demande de création de compte n'a pas été acceptée.",
+        accountRejectedOutro: 'Pour en savoir plus, contactez notre équipe.',
+        accountSuspendedSubject: 'Votre compte a été suspendu',
+        accountSuspendedTitle: 'Compte suspendu',
+        accountSuspendedBody: 'Votre compte Analytix a été suspendu. Vous ne pouvez plus vous connecter pour le moment.',
+        accountSuspendedOutro: 'Pour en savoir plus, contactez notre équipe.',
+        accountDeletedSubject: 'Votre compte a été supprimé',
+        accountDeletedTitle: 'Compte supprimé',
+        accountDeletedBody: 'Votre compte Analytix a été définitivement supprimé.',
+        accountDeletedOutro: 'Si vous pensez qu\'il s\'agit d\'une erreur, contactez notre équipe.',
+        companyDeletedSubject: 'Votre entreprise a été supprimée',
+        companyDeletedTitle: 'Entreprise supprimée',
+        companyDeletedBody: 'L\'entreprise <strong>{company}</strong> a été supprimée de la plateforme. Votre compte a été suspendu.',
+        companyDeletedOutro: 'Pour en savoir plus, contactez notre équipe.',
         invitationSubject: 'Invitation à rejoindre {company}',
         invitationTitle: 'Invitation',
         invitationBody: "Vous avez été invité à rejoindre l'équipe <strong>{company}</strong> sur Analytix.",
@@ -114,6 +130,22 @@ const T = {
         companyRejectedTitle: 'Application declined',
         companyRejectedBody: 'Your registration request for <strong>{company}</strong> was not approved.',
         companyRejectedOutro: 'Contact our team if you need more information.',
+        accountRejectedSubject: 'Your account was declined',
+        accountRejectedTitle: 'Account declined',
+        accountRejectedBody: 'Your account registration request was not approved.',
+        accountRejectedOutro: 'Contact our team if you need more information.',
+        accountSuspendedSubject: 'Your account has been suspended',
+        accountSuspendedTitle: 'Account suspended',
+        accountSuspendedBody: 'Your Analytix account has been suspended. You can no longer sign in for now.',
+        accountSuspendedOutro: 'Contact our team if you need more information.',
+        accountDeletedSubject: 'Your account has been deleted',
+        accountDeletedTitle: 'Account deleted',
+        accountDeletedBody: 'Your Analytix account has been permanently deleted.',
+        accountDeletedOutro: 'If you believe this is a mistake, contact our team.',
+        companyDeletedSubject: 'Your company has been deleted',
+        companyDeletedTitle: 'Company deleted',
+        companyDeletedBody: 'The company <strong>{company}</strong> has been removed from the platform. Your account has been suspended.',
+        companyDeletedOutro: 'Contact our team if you need more information.',
         invitationSubject: 'Invitation to join {company}',
         invitationTitle: 'Invitation',
         invitationBody: 'You have been invited to join the <strong>{company}</strong> team on Analytix.',
@@ -223,6 +255,35 @@ export async function sendCompanyRejectedEmail(
     const body = `<p>${tpl(t.companyRejectedBody, { company: companyName })}</p>
       <p>${t.companyRejectedOutro}</p>`;
     await send(to, t.companyRejectedSubject, layout(t.companyRejectedTitle, body));
+}
+
+export async function sendAccountRejectedEmail(to: string, locale: Locale = 'fr'): Promise<void> {
+    const t = T[localeOf(locale)];
+    const body = `<p>${t.accountRejectedBody}</p><p>${t.accountRejectedOutro}</p>`;
+    await send(to, t.accountRejectedSubject, layout(t.accountRejectedTitle, body));
+}
+
+export async function sendAccountSuspendedEmail(to: string, locale: Locale = 'fr'): Promise<void> {
+    const t = T[localeOf(locale)];
+    const body = `<p>${t.accountSuspendedBody}</p><p>${t.accountSuspendedOutro}</p>`;
+    await send(to, t.accountSuspendedSubject, layout(t.accountSuspendedTitle, body));
+}
+
+export async function sendAccountDeletedEmail(to: string, locale: Locale = 'fr'): Promise<void> {
+    const t = T[localeOf(locale)];
+    const body = `<p>${t.accountDeletedBody}</p><p>${t.accountDeletedOutro}</p>`;
+    await send(to, t.accountDeletedSubject, layout(t.accountDeletedTitle, body));
+}
+
+export async function sendCompanyDeletedEmail(
+    to: string,
+    companyName: string,
+    locale: Locale = 'fr',
+): Promise<void> {
+    const t = T[localeOf(locale)];
+    const body = `<p>${tpl(t.companyDeletedBody, { company: companyName })}</p>
+      <p>${t.companyDeletedOutro}</p>`;
+    await send(to, t.companyDeletedSubject, layout(t.companyDeletedTitle, body));
 }
 
 export async function sendInvitationEmail(
