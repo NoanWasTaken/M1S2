@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { api } from '@/lib/api-client';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 type Me = {
     _id: string;
@@ -322,10 +323,31 @@ function ShareSection({ appId }: { appId: string }) {
 
 function AccountCard({ me }: { me: Me }) {
     const t = useTranslations('settings');
+    const locale = useLocale();
     const displayedRole =
         me.role === 'admin' ? t('roleAdmin')
         : me.teamRole === 'member' ? t('teamMember')
         : t('roleWebmaster');
+    const [sendingReset, setSendingReset] = useState(false);
+    const [resetSent, setResetSent] = useState(false);
+    const [resetError, setResetError] = useState(false);
+
+    async function handlePasswordReset() {
+        setSendingReset(true);
+        setResetSent(false);
+        setResetError(false);
+        try {
+            await api.post('/api/v1/auth/forgot-password', {
+                email: me.email,
+                locale,
+            });
+            setResetSent(true);
+        } catch {
+            setResetError(true);
+        } finally {
+            setSendingReset(false);
+        }
+    }
 
     return (
         <Card className="flex flex-col gap-4">
@@ -338,6 +360,32 @@ function AccountCard({ me }: { me: Me }) {
                 )}
                 <Field label={t('accountStatus')} value={accountStatusLabel(me.status, t)} />
                 <Field label={t('memberSince')} value={formatDate(me.createdAt)} />
+            </div>
+
+            <div className="h-px w-full bg-border-subtle" />
+
+            <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1">
+                    <h3 className="text-sm font-medium text-text-primary">{t('passwordResetTitle')}</h3>
+                    <p className="text-sm text-text-secondary">{t('passwordResetHint')}</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                    <Button
+                        type="button"
+                        size="sm"
+                        onClick={handlePasswordReset}
+                        isLoading={sendingReset}
+                    >
+                        {t('passwordResetAction')}
+                    </Button>
+                    <span className="text-xs text-text-tertiary">{me.email}</span>
+                </div>
+                {resetSent && (
+                    <p className="text-sm text-success">{t('passwordResetSent')}</p>
+                )}
+                {resetError && (
+                    <p className="text-sm text-danger">{t('passwordResetError')}</p>
+                )}
             </div>
         </Card>
     );
