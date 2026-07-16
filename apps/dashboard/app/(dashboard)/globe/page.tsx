@@ -7,19 +7,7 @@ import { useGlobeStream, type GlobePoint } from '@/lib/use-globe-stream';
 
 const Globe = dynamic(() => import('react-globe.gl'), { ssr: false });
 
-type GlobeControls = {
-    autoRotate: boolean;
-    autoRotateSpeed: number;
-    enableZoom: boolean;
-};
-
-type GlobeInstance = {
-    controls: () => GlobeControls;
-    pointOfView: (
-        coords: { lat: number; lng: number; altitude: number },
-        transitionMs?: number,
-    ) => void;
-};
+type GlobeInstance = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 export default function GlobePage() {
     const t = useTranslations('globe');
