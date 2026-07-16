@@ -14,6 +14,7 @@ export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
   jwtAccessSecret: required('JWT_ACCESS_SECRET'),
   jwtRefreshSecret: required('JWT_REFRESH_SECRET'),
+  shareTokenSecret: process.env.SHARE_TOKEN_SECRET ?? required('JWT_ACCESS_SECRET'),
   resendApiKey: required('RESEND_API_KEY'),
   mailFrom: process.env.MAIL_FROM ?? 'onboarding@noandelatouche.dev',
   appWebUrl: process.env.APP_WEB_URL ?? 'http://localhost:3000',
