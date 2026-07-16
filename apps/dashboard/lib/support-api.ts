@@ -49,7 +49,7 @@ export async function fetchConversation(id: string) {
   return res.data.conversation;
 }
 
-export async function fetchMessages(conversationId: string, page = 1, limit = 20) {
+export async function fetchMessages(conversationId: string, page = 1, limit = 100) {
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   const res = await api.get<{ messages: Message[]; total: number; page: number; limit: number }>(
     `/api/v1/conversations/${conversationId}/messages?${params}`,

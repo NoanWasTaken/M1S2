@@ -15,6 +15,10 @@ export function IncomingCallPopup({ open, call, onAnswer, onDecline }: Props) {
 
     if (!open || !call) return null;
 
+    const text = call.senderRole === 'admin'
+      ? t('callIncomingPopupTextFromAdmin')
+      : t('callIncomingPopupTextFromOwner');
+
     return (
         <div className="fixed bottom-4 right-4 z-[70] w-[min(24rem,calc(100vw-2rem))] rounded-2xl border border-accent/40 bg-[rgba(13,18,32,0.96)] p-4 shadow-[0_22px_70px_rgba(2,8,23,0.55)] backdrop-blur-xl">
             <div className="flex items-start gap-3">
@@ -27,7 +31,7 @@ export function IncomingCallPopup({ open, call, onAnswer, onDecline }: Props) {
                 </div>
                 <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-text-primary">{t('callIncomingPopupTitle')}</p>
-                    <p className="mt-1 text-sm leading-5 text-text-secondary">{t('callIncomingPopupText')}</p>
+                    <p className="mt-1 text-sm leading-5 text-text-secondary">{text}</p>
                 </div>
             </div>
 

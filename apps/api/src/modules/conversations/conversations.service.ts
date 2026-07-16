@@ -154,15 +154,14 @@ export async function getMessages(
 ) {
   await getConversation(conversationId, user);
 
-  const skip = (page - 1) * limit;
-  const [messages, total] = await Promise.all([
-    MessageModel.find({ conversationId })
-      .sort({ createdAt: 1 })
-      .skip(skip)
-      .limit(limit)
-      .lean(),
-    MessageModel.countDocuments({ conversationId }),
-  ]);
+  const total = await MessageModel.countDocuments({ conversationId });
+  const skip = Math.max(0, total - page * limit);
+
+  const messages = await MessageModel.find({ conversationId })
+    .sort({ createdAt: 1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
 
   return { messages, total, page, limit };
 }
@@ -188,6 +187,7 @@ export async function sendMessage(
     senderId: user.userId,
     senderRole: user.role,
     content: data.content,
+    type: message.type,
     sentAt: message.createdAt,
   });
 
