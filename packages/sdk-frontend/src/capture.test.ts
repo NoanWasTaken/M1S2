@@ -32,6 +32,10 @@ describe('startAutoCapture', () => {
         expect(click?.payload).toMatchObject({
             x: 10,
             y: 20,
+            px: expect.any(Number),
+            py: expect.any(Number),
+            pw: expect.any(Number),
+            ph: expect.any(Number),
             tag: 'button',
             nature: 'action',
             id: 'buy',
