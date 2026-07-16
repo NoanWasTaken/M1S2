@@ -4,12 +4,21 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/providers/auth-provider';
 import { sendMessage, sendTyping, type Message } from '@/lib/support-api';
+import { clearCallAcceptIntent } from '@/lib/support-call-accept';
+import {
+  clearRemoteIceCandidates,
+  drainRemoteIceCandidates,
+  subscribeCallSignals,
+  type CallSignalMessage,
+} from '@/lib/support-call-bus';
 import { TypingIndicator } from './typing-indicator';
 
 type CallSignal = {
   type: 'offer' | 'answer' | 'candidate' | 'state';
   payload: unknown;
   sessionId?: string;
+  callAccepted?: boolean;
+  conversationId?: string;
 };
 
 type Props = {
@@ -38,6 +47,7 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
   const [isSharingScreen, setIsSharingScreen] = useState(false);
   const [screenShareError, setScreenShareError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [hasRemoteStream, setHasRemoteStream] = useState(false);
   const typingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const callViewRef = useRef<HTMLDivElement>(null);
@@ -50,6 +60,12 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
   const remoteStreamRef = useRef<MediaStream | null>(null);
   const screenStreamRef = useRef<MediaStream | null>(null);
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
+  const mediaGenerationRef = useRef(0);
+  const isMountedRef = useRef(true);
+  const signalQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const processedOfferKeysRef = useRef<Set<string>>(new Set());
+  const callStatusRef = useRef(callStatus);
+  callStatusRef.current = callStatus;
   const callSessionRef = useRef<{ startedAt: number | null; ended: boolean; hasLoggedStart: boolean; isInitiator: boolean; sessionId: string | null }>({
     startedAt: null,
     ended: false,
@@ -157,22 +173,37 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
 
   const stopAllLocalStreams = () => {
     [cameraStreamRef.current, localStreamRef.current, screenStreamRef.current].forEach((stream) => {
-      stream?.getTracks().forEach((track) => track.stop());
+      stream?.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch {
+          // ignore
+        }
+      });
     });
     cameraStreamRef.current = null;
     localStreamRef.current = null;
     screenStreamRef.current = null;
   };
 
+  const clearVideoElements = () => {
+    if (localVideoRef.current) localVideoRef.current.srcObject = null;
+    if (cameraPreviewRef.current) cameraPreviewRef.current.srcObject = null;
+    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+  };
+
+  const detachPeerConnectionHandlers = (pc: RTCPeerConnection) => {
+    pc.onicecandidate = null;
+    pc.ontrack = null;
+    pc.onconnectionstatechange = null;
+    pc.onicecandidateerror = null;
+  };
+
   const stopCall = (options?: { notifyPeer?: boolean }) => {
+    mediaGenerationRef.current += 1;
+
     const startedAt = callSessionRef.current.startedAt;
     const hasActiveCall = Boolean(startedAt && !callSessionRef.current.ended);
-
-    if (!hasActiveCall && callSessionRef.current.ended) {
-      setCallStatus('ended');
-      setShowCallView(false);
-      return;
-    }
 
     if (hasActiveCall) {
       const sessionId = callSessionRef.current.sessionId ?? createSessionId();
@@ -185,17 +216,61 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
       }
 
       void pushSystemMessage(t('callSystemEnded', { duration: formatCallDuration(startedAt) }));
+    } else {
+      callSessionRef.current.ended = true;
+      callSessionRef.current.startedAt = null;
     }
 
-    peerConnectionRef.current?.close();
+    callSessionRef.current.isInitiator = false;
+    callSessionRef.current.hasLoggedStart = false;
+    callSessionRef.current.sessionId = null;
+
+    try {
+      const pc = peerConnectionRef.current;
+      if (pc) {
+        detachPeerConnectionHandlers(pc);
+        pc.getSenders().forEach((sender) => {
+          try {
+            sender.track?.stop();
+          } catch {
+            // ignore
+          }
+        });
+        pc.getReceivers().forEach((receiver) => {
+          try {
+            receiver.track?.stop();
+          } catch {
+            // ignore
+          }
+        });
+        pc.close();
+      }
+    } catch {
+      // ignore
+    }
     peerConnectionRef.current = null;
     stopAllLocalStreams();
+    [localVideoRef.current, cameraPreviewRef.current, remoteVideoRef.current].forEach((video) => {
+      const stream = video?.srcObject;
+      if (stream instanceof MediaStream) {
+        stream.getTracks().forEach((track) => {
+          try {
+            track.stop();
+          } catch {
+            // ignore
+          }
+        });
+      }
+    });
     remoteStreamRef.current = null;
-    if (localVideoRef.current) localVideoRef.current.srcObject = null;
-    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+    setHasRemoteStream(false);
+    clearVideoElements();
     pendingCandidatesRef.current = [];
+    processedOfferKeysRef.current.clear();
+    clearRemoteIceCandidates(conversationId);
     setIsSharingScreen(false);
     setScreenShareError(null);
+    setCallError(null);
 
     setCallStatus('ended');
     setShowCallView(false);
@@ -211,17 +286,52 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
     }
   };
 
+  const syncRemoteVideoDisplay = () => {
+    if (remoteVideoRef.current && remoteStreamRef.current) {
+      remoteVideoRef.current.srcObject = remoteStreamRef.current;
+    }
+  };
+
+  const mediaErrorMessage = (error: unknown, fallback: string) => {
+    if (!(error instanceof Error)) return fallback;
+    const name = 'name' in error ? String((error as DOMException).name) : '';
+    if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+      return t('callErrorPermission');
+    }
+    if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+      return t('callErrorNoDevice');
+    }
+    return error.message || fallback;
+  };
+
   const ensureMedia = async () => {
     if (cameraStreamRef.current) {
-      localStreamRef.current = cameraStreamRef.current;
-      syncLocalVideoDisplays(isSharingScreen);
-      return cameraStreamRef.current;
+      const live = cameraStreamRef.current.getTracks().some((track) => track.readyState === 'live');
+      if (live) {
+        localStreamRef.current = cameraStreamRef.current;
+        syncLocalVideoDisplays(isSharingScreen);
+        return cameraStreamRef.current;
+      }
+      stopAllLocalStreams();
     }
     if (!navigator.mediaDevices?.getUserMedia) {
       throw new Error('Your browser does not support camera access.');
     }
 
+    const generation = mediaGenerationRef.current;
     const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+
+    if (!isMountedRef.current || generation !== mediaGenerationRef.current) {
+      stream.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch {
+          // ignore
+        }
+      });
+      throw new Error('Call cancelled');
+    }
+
     cameraStreamRef.current = stream;
     localStreamRef.current = stream;
     syncLocalVideoDisplays(isSharingScreen);
@@ -244,8 +354,7 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
 
   const createPeerConnection = async () => {
     if (peerConnectionRef.current) {
-      peerConnectionRef.current.close();
-      peerConnectionRef.current = null;
+      return peerConnectionRef.current;
     }
 
     const stream = await ensureMedia();
@@ -266,20 +375,22 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
       const [remoteStream] = event.streams;
       if (remoteStream) {
         remoteStreamRef.current = remoteStream;
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = remoteStream;
-        }
+        setHasRemoteStream(true);
+        syncRemoteVideoDisplay();
+        setCallStatus('connected');
+      } else if (event.track) {
+        const stream = new MediaStream([event.track]);
+        remoteStreamRef.current = stream;
+        setHasRemoteStream(true);
+        syncRemoteVideoDisplay();
         setCallStatus('connected');
       }
     };
 
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
-        setCallStatus('ended');
+      if (pc.connectionState === 'failed') {
+        stopCall({ notifyPeer: false });
       }
-    };
-
-    pc.onicecandidateerror = () => {
     };
 
     peerConnectionRef.current = pc;
@@ -307,7 +418,7 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
       setCallStatus('connecting');
     } catch (error) {
       setCallStatus('ended');
-      setCallError(error instanceof Error ? error.message : t('callErrorStart'));
+      setCallError(mediaErrorMessage(error, t('callErrorStart')));
     }
   };
 
@@ -408,93 +519,116 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
 
     const sessionId = typeof signal.sessionId === 'string' ? signal.sessionId : null;
     if (sessionId && callSessionRef.current.sessionId && sessionId !== callSessionRef.current.sessionId) {
-      return;
+      const isEnded = signal.type === 'state'
+        && signal.payload
+        && typeof signal.payload === 'object'
+        && 'state' in signal.payload
+        && signal.payload.state === 'ended';
+      if (!isEnded) return;
     }
 
-    setShowCallView(true);
-
     if (signal.type === 'state' && signal.payload && typeof signal.payload === 'object' && 'state' in signal.payload) {
+      if (signal.payload.state === 'ended') {
+        stopCall({ notifyPeer: false });
+        return;
+      }
+
       if (signal.payload.state === 'ringing') {
-        if (sessionId) {
-          callSessionRef.current.sessionId = sessionId;
-        }
+        if (!callSessionRef.current.isInitiator) return;
+        if (sessionId) callSessionRef.current.sessionId = sessionId;
         setCallStatus('ringing');
         setShowCallView(true);
         return;
       }
 
       if (signal.payload.state === 'answered' || signal.payload.state === 'joined') {
-        if (sessionId) {
-          callSessionRef.current.sessionId = sessionId;
-        }
+        const inActiveSession = Boolean(callSessionRef.current.startedAt && !callSessionRef.current.ended);
+        if (!inActiveSession) return;
+        if (sessionId) callSessionRef.current.sessionId = sessionId;
         setCallStatus('connecting');
         setShowCallView(true);
         return;
       }
-
-      if (signal.payload.state === 'ended') {
-        stopCall({ notifyPeer: false });
-        return;
-      }
     }
-
-    if (!peerConnectionRef.current) {
-      try {
-        await createPeerConnection();
-      } catch (error) {
-        setCallError(error instanceof Error ? error.message : t('callErrorMedia'));
-        return;
-      }
-    }
-
-    const pc = peerConnectionRef.current;
-    if (!pc) return;
 
     if (signal.type === 'offer' && signal.payload) {
-      const sessionId = typeof signal.sessionId === 'string' ? signal.sessionId : null;
+      if (!signal.callAccepted) return;
+
       if (callSessionRef.current.isInitiator && callSessionRef.current.startedAt && !callSessionRef.current.ended) {
         return;
       }
+
+      const offer = signal.payload as RTCSessionDescriptionInit;
+      const offerKey = `${sessionId ?? ''}:${offer.sdp?.slice(0, 64) ?? ''}`;
+      if (processedOfferKeysRef.current.has(offerKey)) return;
 
       try {
         if (!beginCallSession(false, sessionId ?? undefined)) {
           return;
         }
 
+        processedOfferKeysRef.current.add(offerKey);
+        setShowCallView(true);
         setCallStatus('connecting');
+        setCallError(null);
         await logCallStart();
-        const offer = signal.payload as RTCSessionDescriptionInit;
+
+        const pc = await createPeerConnection();
+        if (pc.signalingState !== 'stable' || pc.remoteDescription) {
+          return;
+        }
+
         await pc.setRemoteDescription(offer);
+
+        const buffered = drainRemoteIceCandidates(conversationId, callSessionRef.current.sessionId);
+        for (const candidate of buffered) {
+          pendingCandidatesRef.current.push(candidate);
+        }
         await flushPendingCandidates(pc);
+
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
+        await flushPendingCandidates(pc);
+        syncLocalVideoDisplays(false);
+        syncRemoteVideoDisplay();
         onCallSignal?.({ type: 'answer', payload: answer, sessionId: callSessionRef.current.sessionId ?? undefined });
         onCallSignal?.({ type: 'state', payload: { state: 'answered' }, sessionId: callSessionRef.current.sessionId ?? undefined });
+        clearCallAcceptIntent();
       } catch (error) {
-        setCallError(error instanceof Error ? error.message : t('callErrorAnswer'));
+        processedOfferKeysRef.current.delete(offerKey);
+        if (error instanceof Error && error.message === 'Call cancelled') return;
+        setCallError(mediaErrorMessage(error, t('callErrorAnswer')));
       }
       return;
     }
 
+    const pc = peerConnectionRef.current;
+
     if (signal.type === 'answer' && signal.payload) {
+      if (!callSessionRef.current.isInitiator || !pc) return;
+      if (pc.signalingState !== 'have-local-offer') return;
+
       try {
         await pc.setRemoteDescription(signal.payload as RTCSessionDescriptionInit);
         await flushPendingCandidates(pc);
         setCallStatus('connected');
+        setShowCallView(true);
+        syncLocalVideoDisplays(isSharingScreen);
+        syncRemoteVideoDisplay();
       } catch (error) {
-        setCallError(error instanceof Error ? error.message : t('callErrorConnect'));
+        setCallError(mediaErrorMessage(error, t('callErrorConnect')));
       }
       return;
     }
 
     if (signal.type === 'candidate' && signal.payload) {
-      const sessionId = typeof signal.sessionId === 'string' ? signal.sessionId : null;
-      if (sessionId && callSessionRef.current.sessionId && sessionId !== callSessionRef.current.sessionId) {
+      const candidateSessionId = typeof signal.sessionId === 'string' ? signal.sessionId : null;
+      if (candidateSessionId && callSessionRef.current.sessionId && candidateSessionId !== callSessionRef.current.sessionId) {
         return;
       }
 
       try {
-        if (!pc.remoteDescription) {
+        if (!pc || !pc.remoteDescription) {
           pendingCandidatesRef.current.push(signal.payload as RTCIceCandidateInit);
           return;
         }
@@ -505,15 +639,57 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
     }
   };
 
-  useEffect(() => {
-    return () => {
-      stopCall();
-    };
-  }, []);
+  const enqueueSignal = (signal: CallSignal | CallSignalMessage | null | undefined) => {
+    if (!signal) return;
+    if (signal.conversationId && signal.conversationId !== conversationId) return;
+    signalQueueRef.current = signalQueueRef.current
+      .then(() => handleIncomingSignal(signal))
+      .catch((error) => {
+        console.warn('Failed to process call signal', error);
+      });
+  };
 
   useEffect(() => {
-    void handleIncomingSignal(incomingCallSignal);
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      stopCall({ notifyPeer: false });
+    };
+  }, [conversationId]);
+
+  useEffect(() => {
+    enqueueSignal(incomingCallSignal);
   }, [incomingCallSignal]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeCallSignals((signal) => {
+      enqueueSignal(signal);
+    });
+    return unsubscribe;
+  }, [conversationId]);
+
+  useEffect(() => {
+    if (!showCallView) return;
+    const id = window.requestAnimationFrame(() => {
+      syncLocalVideoDisplays(isSharingScreen);
+      syncRemoteVideoDisplay();
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [showCallView, callStatus, isSharingScreen, hasRemoteStream]);
+
+  useEffect(() => {
+    const onEnded = (event: Event) => {
+      const detail = (event as CustomEvent<CallSignal & { conversationId?: string }>).detail;
+      if (detail?.conversationId && detail.conversationId !== conversationId) return;
+      stopCall({ notifyPeer: false });
+    };
+    window.addEventListener('support:call-ended', onEnded);
+    return () => window.removeEventListener('support:call-ended', onEnded);
+  }, [conversationId]);
+
+  const waitingLabel = user?.role === 'admin'
+    ? t('callWaitingForOwner')
+    : t('callWaitingForAdmin');
 
   return (
     <div className="flex h-full flex-col">
@@ -600,18 +776,18 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
                   <div className="relative flex-1 overflow-hidden rounded-xl bg-black">
                     <video ref={localVideoRef} autoPlay muted playsInline className="h-full w-full object-contain" />
                     <div className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">{t('callSharedScreen')}</div>
-                    {cameraStreamRef.current ? (
+                    {isSharingScreen && (
                       <div className="absolute bottom-4 right-4 h-28 w-20 overflow-hidden rounded-xl border border-white/20 bg-black shadow-2xl sm:h-36 sm:w-24">
                         <video ref={cameraPreviewRef} autoPlay muted playsInline className="h-full w-full object-cover" />
                         <div className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-1 text-[10px] font-medium text-white">{t('callCamera')}</div>
                       </div>
-                    ) : null}
+                    )}
                   </div>
                   <div className="relative min-h-[180px] overflow-hidden rounded-xl border border-border-subtle bg-bg-card">
                     <video ref={remoteVideoRef} autoPlay playsInline className="h-full w-full object-cover" />
-                    {!remoteStreamRef.current && (
+                    {!hasRemoteStream && (
                       <div className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-text-secondary">
-                        {t('callWaitingParticipant')}
+                        {waitingLabel}
                       </div>
                     )}
                     <div className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">{t('callGuest')}</div>
@@ -625,9 +801,9 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
                   </div>
                   <div className="relative flex min-h-[220px] items-center justify-center overflow-hidden rounded-xl border border-border-subtle bg-bg-card">
                     <video ref={remoteVideoRef} autoPlay playsInline className="h-full w-full object-cover" />
-                    {!remoteStreamRef.current && (
+                    {!hasRemoteStream && (
                       <div className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-text-secondary">
-                        {t('callWaitingParticipant')}
+                        {waitingLabel}
                       </div>
                     )}
                     <div className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">{t('callGuest')}</div>

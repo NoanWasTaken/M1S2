@@ -5,23 +5,49 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ConversationList } from '@/components/support/conversation-list';
 import { ConversationThread } from '@/components/support/conversation-thread';
-import { fetchConversations, fetchMessages, acceptConversation, closeConversation, type Conversation, type ConversationStatus, type Message } from '@/lib/support-api';
+import { SupportBadge } from '@/components/support/support-badge';
+import { useSupportNotifications } from '@/components/support/support-notifications';
+import { fetchConversations, fetchConversation, fetchMessages, acceptConversation, closeConversation, sendCallSignal, type Conversation, type ConversationStatus, type Message } from '@/lib/support-api';
 import { useConversationStream, type SupportCallSignalEvent, type SupportMessageEvent, type SupportPresenceEvent, type SupportTypingEvent } from '@/lib/use-conversation-stream';
 import { useAuth } from '@/providers/auth-provider';
+import {
+  asAcceptedCall,
+  clearCallAcceptIntent,
+  consumeAcceptedOffer,
+  peekAcceptedOffer,
+} from '@/lib/support-call-accept';
+import { publishCallSignal } from '@/lib/support-call-bus';
+
+function isEndedSignal(payload: SupportCallSignalEvent): boolean {
+  return payload.type === 'state'
+    && typeof payload.payload === 'object'
+    && payload.payload !== null
+    && 'state' in payload.payload
+    && payload.payload.state === 'ended';
+}
+
+function isIncomingCallSignal(payload: SupportCallSignalEvent): boolean {
+  const isRinging = payload.type === 'state'
+    && typeof payload.payload === 'object'
+    && payload.payload !== null
+    && 'state' in payload.payload
+    && payload.payload.state === 'ringing';
+  return payload.type === 'offer' || isRinging;
+}
 
 export default function AdminSupportPage() {
   const t = useTranslations('support');
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { unreadCounts, unreadTotal, markConversationRead } = useSupportNotifications();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [statusFilter, setStatusFilter] = useState<ConversationStatus | undefined>('waiting');
-  const [unreadCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [typingUserId, setTypingUserId] = useState<string | null>(null);
   const [incomingCallSignal, setIncomingCallSignal] = useState<SupportCallSignalEvent | null>(null);
-  const [pendingCalls, setPendingCalls] = useState<Record<string, SupportCallSignalEvent>>({});
+  const [pinnedConversation, setPinnedConversation] = useState<Conversation | null>(null);
 
   const activeId = searchParams.get('conversation');
 
@@ -38,31 +64,105 @@ export default function AdminSupportPage() {
   const load = useCallback(async () => {
     try {
       const data = await fetchConversations(statusFilter);
-      setConversations(data.conversations);
+      setConversations((prev) => {
+        const next = data.conversations;
+        if (!activeId) return next;
+        const kept = prev.find((c) => c._id === activeId);
+        if (kept && !next.some((c) => c._id === activeId)) {
+          return [kept, ...next];
+        }
+        return next;
+      });
     } catch {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, activeId]);
+
+  useEffect(() => {
+    if (!activeId) return;
+    if (conversations.some((c) => c._id === activeId)) return;
+
+    void fetchConversation(activeId)
+      .then((conversation) => {
+        setConversations((prev) => {
+          if (prev.some((c) => c._id === conversation._id)) return prev;
+          return [conversation, ...prev];
+        });
+      })
+      .catch(() => { });
+  }, [activeId, conversations]);
 
   useEffect(() => {
     load();
   }, [load]);
 
   useEffect(() => {
-    if (activeId) {
-      const pending = pendingCalls[activeId];
-      setIncomingCallSignal(pending ?? null);
-      setTypingUserId(null);
-      fetchMessages(activeId)
-        .then((data) => setMessages(data.messages))
-        .catch(() => { });
-    } else {
+    if (!activeId) {
       setMessages([]);
+      setIncomingCallSignal(null);
+      return;
     }
-  }, [activeId, pendingCalls]);
+
+    setTypingUserId(null);
+    markConversationRead(activeId);
+
+    const storedPending = peekAcceptedOffer(activeId);
+    if (storedPending) {
+      setIncomingCallSignal(storedPending);
+      publishCallSignal(storedPending);
+      setStatusFilter(undefined);
+    } else {
+      setIncomingCallSignal(null);
+    }
+
+    fetchMessages(activeId)
+      .then((data) => setMessages(data.messages))
+      .catch(() => { });
+  }, [activeId, markConversationRead]);
+
+  useEffect(() => {
+    const onAccepted = (event: Event) => {
+      const detail = (event as CustomEvent<SupportCallSignalEvent & { callAccepted?: boolean }>).detail;
+      if (!detail) return;
+
+      if (detail.conversationId !== activeId) {
+        setActiveId(detail.conversationId);
+        if (detail.type === 'offer' && detail.callAccepted) {
+          asAcceptedCall(detail);
+        }
+        setStatusFilter(undefined);
+        return;
+      }
+
+      if (detail.type === 'offer' && detail.callAccepted) {
+        const accepted = asAcceptedCall(detail);
+        setIncomingCallSignal(accepted);
+        publishCallSignal(accepted);
+        setStatusFilter(undefined);
+      }
+    };
+    const onEnded = (event: Event) => {
+      const detail = (event as CustomEvent<SupportCallSignalEvent>).detail;
+      clearCallAcceptIntent();
+      if (detail?.conversationId === activeId) {
+        setIncomingCallSignal({
+          ...detail,
+          type: 'state',
+          payload: { state: 'ended' },
+        });
+      }
+    };
+    window.addEventListener('support:call-accepted', onAccepted);
+    window.addEventListener('support:call-ended', onEnded);
+    return () => {
+      window.removeEventListener('support:call-accepted', onAccepted);
+      window.removeEventListener('support:call-ended', onEnded);
+    };
+  }, [activeId, setActiveId]);
 
   const handleMessage = useCallback((payload: SupportMessageEvent) => {
+    if (payload.senderId === user?.id) return;
     if (payload.conversationId === activeId) {
       setMessages((prev) => {
         if (prev.some((m) => m._id === payload.messageId)) return prev;
@@ -78,7 +178,7 @@ export default function AdminSupportPage() {
       });
     }
     load();
-  }, [activeId, load]);
+  }, [activeId, load, user?.id]);
 
   const handlePresence = useCallback((_payload: SupportPresenceEvent) => {
     load();
@@ -93,28 +193,29 @@ export default function AdminSupportPage() {
   const handleCallSignal = useCallback((payload: SupportCallSignalEvent) => {
     if (payload.senderId === user?.id) return;
 
-    const isRinging = payload.type === 'state' && typeof payload.payload === 'object' && payload.payload !== null && 'state' in payload.payload && payload.payload.state === 'ringing';
-    const isIncomingCall = payload.type === 'offer' || isRinging;
-
-    if (isIncomingCall) {
-      setPendingCalls((prev) => ({ ...prev, [payload.conversationId]: payload }));
-    }
-
-    if (payload.type === 'state' && typeof payload.payload === 'object' && payload.payload !== null && 'state' in payload.payload && payload.payload.state === 'ended') {
-      setPendingCalls((prev) => {
-        const next = { ...prev };
-        delete next[payload.conversationId];
-        return next;
-      });
+    if (isEndedSignal(payload)) {
+      clearCallAcceptIntent();
+      publishCallSignal(payload);
       if (payload.conversationId === activeId) {
-        setIncomingCallSignal(null);
+        setIncomingCallSignal(payload);
       }
       return;
     }
 
-    if (payload.conversationId === activeId) {
-      setIncomingCallSignal(payload);
+    if (isIncomingCallSignal(payload)) {
+      if (payload.type === 'offer') {
+        const accepted = consumeAcceptedOffer(payload);
+        if (accepted) {
+          publishCallSignal(accepted);
+          if (payload.conversationId === activeId) {
+            setIncomingCallSignal(accepted);
+          }
+        }
+      }
+      return;
     }
+
+    publishCallSignal(payload);
   }, [activeId, user?.id]);
 
   useConversationStream({
@@ -123,9 +224,10 @@ export default function AdminSupportPage() {
     onTyping: handleTyping,
     onNewConversation: load,
     onCallSignal: handleCallSignal,
-  }, activeId || undefined);
+  });
 
   const handleSelect = async (id: string) => {
+    markConversationRead(id);
     setActiveId(id);
   };
 
@@ -148,39 +250,18 @@ export default function AdminSupportPage() {
     }
   };
 
-  const activeConv = conversations.find((c) => c._id === activeId);
-  const pendingCall = Object.values(pendingCalls)[0] ?? null;
+  const activeConv = conversations.find((c) => c._id === activeId)
+    ?? (pinnedConversation?._id === activeId ? pinnedConversation : null);
 
-  const handleAnswerPendingCall = async () => {
-    if (!pendingCall) return;
-    const id = pendingCall.conversationId;
-
-    if (!conversations.some((c) => c._id === id)) {
-      try {
-        const data = await fetchConversations(undefined);
-        setConversations(data.conversations);
-      } catch {
-      }
+  useEffect(() => {
+    if (activeConv) {
+      setPinnedConversation((prev) => (prev?._id === activeConv._id ? prev : activeConv));
+    } else if (!activeId) {
+      setPinnedConversation(null);
     }
+  }, [activeConv, activeId]);
 
-    setActiveId(id);
-    setIncomingCallSignal(pendingCall);
-  };
-
-  const handleDeclinePendingCall = () => {
-    if (!pendingCall) return;
-    void import('@/lib/support-api').then(({ sendCallSignal }) => sendCallSignal(pendingCall.conversationId, 'state', { state: 'ended' }));
-    setPendingCalls((prev) => {
-      const next = { ...prev };
-      delete next[pendingCall.conversationId];
-      return next;
-    });
-    if (activeId === pendingCall.conversationId) {
-      setIncomingCallSignal(null);
-    }
-  };
-
-  if (loading) {
+  if (loading && !activeId) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
@@ -188,31 +269,24 @@ export default function AdminSupportPage() {
     );
   }
 
+  if (activeId && !activeConv) {
+    return (
+      <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+        <div className="flex min-h-0 flex-1 items-center justify-center">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
-      {pendingCall && pendingCall.conversationId !== activeId && (
-        <div className="border-b border-accent/30 bg-accent/10 px-4 py-3">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-text-primary">Incoming call</p>
-              <p className="text-xs text-text-secondary">Support wants to start a video call with you.</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button type="button" onClick={handleAnswerPendingCall} className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-[#05070d]">
-                Answer
-              </button>
-              <button type="button" onClick={handleDeclinePendingCall} className="rounded-md border border-border-subtle px-3 py-1.5 text-xs font-medium text-text-secondary">
-                Decline
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      <div className={`${activeId ? 'hidden lg:flex' : 'flex'} w-full shrink-0 flex-col lg:w-80`}>
-        <div className="border-b border-border-subtle px-4 py-3">
+      <div className={`${activeId ? 'hidden lg:flex' : 'flex'} min-h-0 w-full shrink-0 flex-col lg:w-80`}>
+        <div className="flex shrink-0 items-center gap-2 border-b border-border-subtle px-4 py-3">
           <h1 className="text-sm font-semibold text-text-primary">{t('waitingQueue')}</h1>
+          <SupportBadge count={unreadTotal} />
         </div>
-        <div className="flex-1 overflow-hidden">
+        <div className="min-h-0 flex-1 overflow-hidden">
           <ConversationList
             conversations={conversations}
             activeId={activeId}
@@ -239,7 +313,7 @@ export default function AdminSupportPage() {
             canAccept={activeConv.status === 'waiting'}
             incomingCallSignal={incomingCallSignal}
             onCallSignal={(signal) => {
-              void import('@/lib/support-api').then(({ sendCallSignal }) => sendCallSignal(activeConv._id, signal.type, signal.payload, signal.sessionId));
+              void sendCallSignal(activeConv._id, signal.type, signal.payload, signal.sessionId);
             }}
           />
         ) : (

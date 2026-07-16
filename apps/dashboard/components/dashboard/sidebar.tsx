@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/providers/auth-provider';
 import { useApplications } from '@/providers/application-provider';
+import { SupportNavBadge } from '@/components/support/support-notifications';
 
 type NavItem = { href: string; key: string; icon: string };
 
@@ -192,6 +193,7 @@ function SidebarContent({
               >
                 {iconMap[item.icon]}
                 <span className="font-medium">{tNav(item.key)}</span>
+                {item.key === 'support' && <SupportNavBadge />}
               </Link>
             );
           })}
