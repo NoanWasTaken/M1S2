@@ -1,6 +1,9 @@
 import type { PipelineStage } from 'mongoose';
 import { EventModel } from '../../models/event.js';
 import { ApplicationModel } from '../../models/application.js';
+import { getWidgets } from './widget.service.js';
+import { buildPipeline } from '../analytics/analytics.engine.js';
+import type { WidgetConfig } from '../analytics/analytics.engine.js';
 
 const PERIOD_MS: Record<string, number> = {
   '24h': 24 * 60 * 60 * 1000,
@@ -305,4 +308,37 @@ export async function getOverviewData(companyId: string, period: string, appId?:
     devices,
     activePages,
   };
+}
+
+const ENGINE_TYPE_MAP: Record<string, WidgetConfig['type']> = {
+  kpi: 'kpi',
+  'area-chart': 'timeseries',
+  heatmap: 'heatmap',
+};
+
+export async function getWidgetData(
+  companyId: string,
+  widgetId: string,
+  period: { start: Date; end: Date },
+) {
+  const widgets = await getWidgets(companyId);
+  const widget = widgets.find((w: any) => w.widgetId === widgetId);
+  if (!widget) return null;
+
+  const engineType = ENGINE_TYPE_MAP[widget.type];
+  if (!engineType) return [];
+
+  const config: WidgetConfig = {
+    type: engineType,
+    appId: widget.config?.metric ?? '',
+    metric: widget.config?.metric ?? '',
+    filters: widget.config?.filters ?? [],
+    period,
+    step: widget.config?.step,
+    mode: widget.config?.mode ?? 'count',
+    pageUrl: widget.config?.pageUrl,
+  };
+
+  const pipeline = buildPipeline(config);
+  return EventModel.aggregate(pipeline);
 }
