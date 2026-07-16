@@ -39,12 +39,23 @@ export class HeatmapService {
   async getScreenshot(appId: string, url: string): Promise<Buffer> {
     const key = cacheKey(appId, url);
     const cpath = cachePath(key);
+    console.info('[heatmap][screenshot] start', { appId, url, cachePath: cpath });
 
     if (fs.existsSync(cpath)) {
       const stat = fs.statSync(cpath);
       if (Date.now() - stat.mtimeMs < TTL_MS) {
+        console.info('[heatmap][screenshot] cache_hit', {
+          appId,
+          url,
+          ageMs: Date.now() - stat.mtimeMs,
+        });
         return Buffer.from(fs.readFileSync(cpath));
       }
+      console.info('[heatmap][screenshot] cache_stale', {
+        appId,
+        url,
+        ageMs: Date.now() - stat.mtimeMs,
+      });
     }
 
     const browser = await puppeteer.launch({
@@ -64,6 +75,12 @@ export class HeatmapService {
       fs.writeFileSync(cpath, buf);
       if (cacheCount() > MAX_FILES) cachePrune();
 
+      console.info('[heatmap][screenshot] captured', {
+        appId,
+        url,
+        bytes: buf.length,
+      });
+
       return buf;
     } finally {
       await browser.close();
@@ -81,16 +98,62 @@ export class HeatmapService {
     pageWidth: number;
     pageHeight: number;
   }> {
+    const normalizedUrl = normalizeUrl(url);
+    const periodStart = new Date(start);
+    const periodEnd = new Date(end);
+
+    const [totalClicksWithCoords, matchedClicksForUrl, sampleUrls] = await Promise.all([
+      EventModel.countDocuments({
+        appId,
+        type: 'click',
+        occurredAt: { $gte: periodStart, $lte: periodEnd },
+        'payload.px': { $exists: true },
+        'payload.py': { $exists: true },
+      }),
+      EventModel.countDocuments({
+        appId,
+        type: 'click',
+        url: normalizedUrl,
+        occurredAt: { $gte: periodStart, $lte: periodEnd },
+        'payload.px': { $exists: true },
+        'payload.py': { $exists: true },
+      }),
+      EventModel.distinct('url', {
+        appId,
+        type: 'click',
+        occurredAt: { $gte: periodStart, $lte: periodEnd },
+      }).then((urls) => urls.filter(Boolean).slice(0, 10)),
+    ]);
+
+    console.info('[heatmap][data] pre_aggregate', {
+      appId,
+      rawUrl: url,
+      normalizedUrl,
+      start,
+      end,
+      totalClicksWithCoords,
+      matchedClicksForUrl,
+      sampleUrls,
+    });
+
     const pipeline = buildHeatmapPipeline({
       type: 'heatmap',
       appId,
       metric: 'event_count',
       filters: [],
-      period: { start: new Date(start), end: new Date(end) },
+      period: { start: periodStart, end: periodEnd },
       mode: 'count',
-      pageUrl: normalizeUrl(url),
+      pageUrl: normalizedUrl,
     });
+    console.info('[heatmap][data] pipeline', { appId, pipeline });
+
     const result = await EventModel.aggregate(pipeline);
+    console.info('[heatmap][data] aggregate_result', {
+      appId,
+      rows: result.length,
+      first: result[0] ?? null,
+    });
+
     return result[0] || { points: [], totalClicks: 0, pageWidth: 0, pageHeight: 0 };
   }
 }
