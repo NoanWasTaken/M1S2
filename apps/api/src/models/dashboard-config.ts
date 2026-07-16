@@ -6,7 +6,7 @@ const widgetConfigSchema = new Schema(
     type: {
       type: String,
       required: true,
-      enum: ['kpi', 'area-chart', 'live-list', 'data-table', 'donut-chart', 'progress-list'],
+      enum: ['kpi', 'area-chart', 'live-list', 'data-table', 'donut-chart', 'progress-list', 'heatmap', 'globe'],
     },
     title: { type: String, default: '' },
     position: {

@@ -17,5 +17,17 @@ export const analyticsQuerySchema = z.object({
     mode: z.enum(['count', 'rate']).default('count'),
 });
 
+export const heatmapQuerySchema = z.object({
+    url: z.string().min(1).max(2048),
+    start: z.string().datetime(),
+    end: z.string().datetime(),
+    applicationId: z.string().min(1),
+});
+
+export const screenshotQuerySchema = z.object({
+    url: z.string().min(1).max(2048),
+    applicationId: z.string().min(1),
+});
+
 export type AnalyticsQueryInput = z.infer<typeof analyticsQuerySchema>;
 export type FilterInput = z.infer<typeof filterSchema>;
