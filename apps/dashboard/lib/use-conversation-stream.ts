@@ -11,6 +11,7 @@ export type SupportMessageEvent = {
   senderId: string;
   senderRole: 'webmaster' | 'admin';
   content: string;
+  type?: 'text' | 'system';
   sentAt: string;
 };
 
