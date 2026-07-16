@@ -49,6 +49,22 @@ export async function rejectCompany(companyId: string) {
     return res.data.company;
 }
 
+export async function deleteUser(userId: string) {
+    await api.delete(`/api/v1/admin/users/${userId}`);
+}
+
+export async function activateUser(userId: string) {
+    await api.post(`/api/v1/admin/users/${userId}/activate`);
+}
+
+export async function permanentlyDeleteUser(userId: string) {
+    await api.delete(`/api/v1/admin/users/${userId}/permanent`);
+}
+
+export async function deleteCompany(companyId: string) {
+    await api.delete(`/api/v1/admin/companies/${companyId}`);
+}
+
 export async function impersonate(userId: string) {
     const res = await api.post<{
         accessToken: string;

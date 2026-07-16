@@ -7,6 +7,7 @@ import {
     fetchPendingCount,
     validateCompany,
     rejectCompany,
+    deleteCompany,
     type AdminCompany,
     type ValidationStatus,
 } from '@/lib/admin-api';
@@ -57,6 +58,18 @@ export default function AdminCompaniesPage() {
         try {
             if (action === 'validate') await validateCompany(id);
             else await rejectCompany(id);
+            await load();
+        } catch {
+        } finally {
+            setBusyId(null);
+        }
+    };
+
+    const handleDeleteCompany = async (id: string) => {
+        if (!confirm(t('deleteCompanyConfirm'))) return;
+        setBusyId(id);
+        try {
+            await deleteCompany(id);
             await load();
         } catch {
         } finally {
@@ -118,26 +131,37 @@ export default function AdminCompaniesPage() {
                                     </a>
                                 </div>
 
-                                {c.validationStatus === 'pending' && (
-                                    <div className="flex shrink-0 gap-2">
+                                <div className="flex shrink-0 gap-2">
+                                    {c.validationStatus === 'pending' ? (
+                                        <>
+                                            <button
+                                                type="button"
+                                                disabled={busyId === c._id}
+                                                onClick={() => act(c._id, 'validate')}
+                                                className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-[#05070d] transition-opacity hover:opacity-90 disabled:opacity-50"
+                                            >
+                                                {t('validate')}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                disabled={busyId === c._id}
+                                                onClick={() => act(c._id, 'reject')}
+                                                className="rounded-md border border-danger/40 px-3 py-1.5 text-xs font-medium text-danger transition-colors hover:bg-danger/10 disabled:opacity-50"
+                                            >
+                                                {t('reject')}
+                                            </button>
+                                        </>
+                                    ) : (
                                         <button
                                             type="button"
                                             disabled={busyId === c._id}
-                                            onClick={() => act(c._id, 'validate')}
-                                            className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-[#05070d] transition-opacity hover:opacity-90 disabled:opacity-50"
-                                        >
-                                            {t('validate')}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            disabled={busyId === c._id}
-                                            onClick={() => act(c._id, 'reject')}
+                                            onClick={() => handleDeleteCompany(c._id)}
                                             className="rounded-md border border-danger/40 px-3 py-1.5 text-xs font-medium text-danger transition-colors hover:bg-danger/10 disabled:opacity-50"
                                         >
-                                            {t('reject')}
+                                            {t('delete')}
                                         </button>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-3 gap-4 border-t border-border-subtle pt-3">

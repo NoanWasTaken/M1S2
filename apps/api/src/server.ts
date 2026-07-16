@@ -19,15 +19,13 @@ import cookieParser from 'cookie-parser';
 import sseRouter from './realtime/sse.route.js';
 import { startHeartbeat } from './realtime/sse-registry.js';
 import alertRouter from './modules/alerts/alert.routes.js';
+import shareRouter from './modules/share/share.routes.js';
+import publicRouter from './modules/public/public.routes.js';
 
 const dashboardOrigins = new Set([env.corsOrigin, ...env.corsExtraOrigins]);
 
 function dashboardCorsOrigin(origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
-  if (!origin) {
-    callback(null, true);
-    return;
-  }
-
+  if (!origin) { callback(null, true); return; }
   callback(null, dashboardOrigins.has(origin));
 }
 
@@ -35,16 +33,19 @@ async function start() {
   await connectToDatabase(env.mongoUri);
 
   const app = express();
-
   app.set('trust proxy', 1);
-
-  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    strictTransportSecurity: { maxAge: 31536000, includeSubDomains: true },
+  }));
   app.use(express.json());
   app.use(cookieParser());
 
   const ingestionCors = cors({ origin: true, methods: ['POST', 'OPTIONS'], allowedHeaders: ['Content-Type', 'x-app-id'] });
   const ingestionHelmet = helmet({ crossOriginResourcePolicy: false });
   app.use('/api/v1/ingestion', ingestionHelmet, ingestionCors, ingestionRouter);
+
+  app.use('/api/v1/public', cors({ origin: true }), publicRouter);
 
   app.use(cors({ origin: dashboardCorsOrigin, credentials: true }));
 
@@ -62,11 +63,10 @@ async function start() {
   app.use('/api/v1/realtime', sseRouter);
   app.use('/api/v1/conversations', conversationsRouter);
   app.use('/api/v1/alerts', alertRouter);
+  app.use('/api/v1/share', shareRouter);
 
   app.use(errorHandler);
-
   startHeartbeat();
-
   app.listen(env.port);
 }
 

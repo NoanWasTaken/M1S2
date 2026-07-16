@@ -1,27 +1,23 @@
 import type { Request, Response } from 'express';
-import { verifyAccessToken, verifyRefreshToken } from '../modules/auth/jwt.js';
+import { verifyRefreshToken, type TokenPayload } from '../modules/auth/jwt.js';
 import { addSubscriber, removeSubscriber, addToRoom, removeFromRoom, ADMIN_ROOM } from './sse-registry.js';
 import { ConversationModel } from '../models/conversation.js';
 import { userConnected, userDisconnected } from './presence.js';
 
 export async function sseStream(req: Request, res: Response): Promise<void> {
   try {
-    const token = (req.cookies?.refreshToken || req.query.token) as string | undefined;
+    const token = req.cookies?.refreshToken;
     if (!token) {
       res.status(401).end();
       return;
     }
 
-    let payload: { sub: string; role: 'admin' | 'webmaster'; companyId?: string };
+    let payload: TokenPayload;
     try {
       payload = verifyRefreshToken(token);
     } catch {
-      try {
-        payload = verifyAccessToken(token);
-      } catch {
-        res.status(401).end();
-        return;
-      }
+      res.status(401).end();
+      return;
     }
 
     const { companyId, sub: userId, role } = payload;

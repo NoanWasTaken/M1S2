@@ -8,6 +8,10 @@ import {
     getPendingCount,
     postValidateCompany,
     postRejectCompany,
+    activateUserController,
+    deleteUserController,
+    permanentlyDeleteUserController,
+    deleteCompanyController,
     postImpersonate,
     postStopImpersonate,
     getStats,
@@ -26,8 +30,12 @@ router.get('/companies/pending-count', getPendingCount);
 router.get('/companies/:id', getCompany);
 router.post('/companies/:id/validate', postValidateCompany);
 router.post('/companies/:id/reject', postRejectCompany);
+router.delete('/companies/:id', deleteCompanyController);
 
 router.get('/users', getUsers);
 router.post('/impersonate/:id', postImpersonate);
+router.post('/users/:id/activate', activateUserController);
+router.delete('/users/:id', deleteUserController);
+router.delete('/users/:id/permanent', permanentlyDeleteUserController);
 
 export default router;
