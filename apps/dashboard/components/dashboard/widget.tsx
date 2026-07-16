@@ -8,14 +8,20 @@ import { LiveList } from './live-list';
 import { DataTable } from './data-table';
 import { DonutChart } from './donut-chart';
 import { ProgressList } from './progress-list';
+import { GlobeWidget } from './globe-widget';
+import { HeatmapWidget } from './heatmap-widget';
+import { CustomTimeseriesWidget } from './custom-timeseries';
 import { kpiData, trafficData, activePagesData, topPagesData, trafficSourcesData, devicesData } from '@/lib/mock-data';
 
 type WidgetRendererProps = {
   widget: WidgetDef;
+  appId: string;
+  dataSources?: Record<string, unknown>;
 };
 
-const WIDGET_TITLE_KEYS: Record<string, 'widgetKpi' | 'trafficToday' | 'activePages' | 'topPages' | 'trafficSources' | 'devices'> = {
+const WIDGET_TITLE_KEYS: Record<string, string> = {
   kpi: 'widgetKpi',
+  heatmap: 'widgetHeatmap',
   'area-chart': 'trafficToday',
   'live-list': 'activePages',
   'data-table': 'topPages',
@@ -25,6 +31,7 @@ const WIDGET_TITLE_KEYS: Record<string, 'widgetKpi' | 'trafficToday' | 'activePa
 
 const dataMap: Record<string, unknown[]> = {
   kpi: kpiData,
+  heatmap: [],
   'area-chart': trafficData,
   'live-list': activePagesData,
   'data-table': topPagesData,
@@ -32,30 +39,86 @@ const dataMap: Record<string, unknown[]> = {
   'progress-list': devicesData,
 };
 
-export function WidgetRenderer({ widget }: WidgetRendererProps) {
-  const t = useTranslations('dashboard');
-  const data = dataMap[widget.type];
-  const titleKey = WIDGET_TITLE_KEYS[widget.type];
-  const title = titleKey ? t(titleKey) : widget.title;
+function isCustomWidget(widget: WidgetDef): boolean {
+  return !!widget.config?.metric;
+}
 
+function SingleKpi({ metric, value }: { metric: string; value?: string }) {
+  const tm = useTranslations('metrics');
+  const label = tm(metric);
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border-card bg-bg-card">
-      <div className="widget-drag-handle flex cursor-grab items-center justify-between border-b border-border-subtle bg-bg-sidebar/50 px-4 py-2">
-        <span className="text-sm font-semibold text-text-primary">{title}</span>
-        <span className="text-text-tertiary">
-          <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M8 6h2v2H8V6zm6 0h2v2h-2V6zM8 11h2v2H8v-2zm6 0h2v2h-2v-2zm-6 5h2v2H8v-2zm6 0h2v2h-2v-2z" />
-          </svg>
-        </span>
-      </div>
-      <div className="flex-1 overflow-auto p-4">
-        {renderWidgetBody(widget.type, data, t)}
+    <div className="flex h-full items-center justify-center">
+      <div className="text-center">
+        <div className="text-3xl font-bold font-mono text-text-primary">{value ?? '—'}</div>
+        <div className="mt-1 text-xs uppercase tracking-wider text-text-secondary">{label}</div>
       </div>
     </div>
   );
 }
 
-function renderWidgetBody(type: string, data: unknown, t: ReturnType<typeof useTranslations<'dashboard'>>) {
+function findKpiValue(dataSources: Record<string, unknown> | undefined, metric: string): string | undefined {
+  if (!dataSources?.kpi) return undefined;
+  const kpiList = dataSources.kpi as { id: string; value: string }[];
+  const METRIC_TO_KPI_ID: Record<string, string> = {
+    pageview: 'pageViews',
+    click: 'clicks',
+    hover: 'hovers',
+    page_exit: 'pageExits',
+    tabchange: 'tabChanges',
+    sessions: 'sessions',
+    pageViews: 'pageViews',
+    bounceRate: 'bounceRate',
+    avgDuration: 'avgDuration',
+  };
+  const kpiId = METRIC_TO_KPI_ID[metric];
+  if (!kpiId) return undefined;
+  const found = kpiList.find((k) => k.id === kpiId);
+  return found?.value;
+}
+
+export function WidgetRenderer({ widget, appId, dataSources }: WidgetRendererProps) {
+  const t = useTranslations('dashboard');
+  const data = dataMap[widget.type];
+  const titleKey = WIDGET_TITLE_KEYS[widget.type];
+  const title = titleKey && !isCustomWidget(widget) ? t(titleKey) : (widget.title || t(titleKey || 'widgetKpi'));
+
+  return (
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border-card bg-bg-card">
+      <div className="widget-drag-handle flex cursor-grab items-center justify-between border-b border-border-subtle bg-bg-sidebar/50 px-4 py-2">
+        <span className="text-sm font-semibold text-text-primary">{title}</span>
+      </div>
+      <div className="flex-1 overflow-auto p-4">
+        {renderWidgetBody(widget, data, t, appId, dataSources)}
+      </div>
+    </div>
+  );
+}
+
+export function renderWidgetBody(
+  widget: WidgetDef,
+  data: unknown,
+  t: ReturnType<typeof useTranslations<'dashboard'>>,
+  appId: string,
+  dataSources?: Record<string, unknown>,
+) {
+  const { type, config } = widget;
+
+  if (isCustomWidget(widget)) {
+    switch (type) {
+      case 'kpi': {
+        const metric = config!.metric as string;
+        const value = findKpiValue(dataSources, metric);
+        return <SingleKpi metric={metric} value={value} />;
+      }
+      case 'area-chart':
+        return <CustomTimeseriesWidget appId={appId} metric={config!.metric as string} title={widget.title} />;
+      case 'heatmap':
+        return <HeatmapWidget widgetId={widget.widgetId} appId={appId} config={config as { pageUrl?: string; period?: string }} />;
+      default:
+        return <p className="text-sm text-text-secondary">{t('unknownWidgetType', { type })}</p>;
+    }
+  }
+
   switch (type) {
     case 'kpi': {
       const items = data as typeof kpiData;
@@ -77,6 +140,10 @@ function renderWidgetBody(type: string, data: unknown, t: ReturnType<typeof useT
       return <DonutChart data={data as typeof trafficSourcesData} />;
     case 'progress-list':
       return <ProgressList data={data as typeof devicesData} />;
+    case 'globe':
+      return <GlobeWidget />;
+    case 'heatmap':
+      return <HeatmapWidget widgetId={widget.widgetId} appId={appId} config={config as { pageUrl?: string; period?: string }} />;
     default:
       return <p className="text-sm text-text-secondary">{t('unknownWidgetType', { type })}</p>;
   }

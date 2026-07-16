@@ -12,7 +12,7 @@ export function PageEnter({ children, className = '' }: PageEnterProps) {
   const pathname = usePathname();
 
   return (
-    <div key={pathname} className={`page-enter flex flex-1 flex-col ${className}`}>
+    <div key={pathname} className={`page-enter flex min-h-0 flex-1 flex-col ${className}`}>
       {children}
     </div>
   );

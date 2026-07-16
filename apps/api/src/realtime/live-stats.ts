@@ -29,6 +29,39 @@ async function countActiveVisitors(appIds: string[]): Promise<number> {
   return sessions.length;
 }
 
+export type CountryVisitors = { country: string; visitors: number };
+
+async function countActiveVisitorsByCountry(appIds: string[]): Promise<CountryVisitors[]> {
+  const since = new Date(Date.now() - ACTIVE_WINDOW_MS);
+  const rows = await EventModel.aggregate<{ _id: string; visitors: number }>([
+    {
+      $match: {
+        appId: { $in: appIds },
+        sessionId: { $ne: null },
+        country: { $ne: null },
+        occurredAt: { $gte: since },
+      },
+    },
+    { $group: { _id: { country: '$country', sessionId: '$sessionId' } } },
+    { $group: { _id: '$_id.country', visitors: { $sum: 1 } } },
+    { $sort: { visitors: -1 } },
+  ]);
+
+  return rows.map((r) => ({ country: r._id, visitors: r.visitors }));
+}
+
+export async function getGlobeSnapshot(
+  companyId: string,
+): Promise<{ activeVisitors: number; byCountry: CountryVisitors[]; computedAt: string }> {
+  const apps = await ApplicationModel.find({ companyId }).select('appId');
+  const appIds = apps.map((a) => a.appId);
+  const [activeVisitors, byCountry] = await Promise.all([
+    countActiveVisitors(appIds),
+    countActiveVisitorsByCountry(appIds),
+  ]);
+  return { activeVisitors, byCountry, computedAt: new Date().toISOString() };
+}
+
 export async function emitDashboardUpdate(appId: string): Promise<void> {
   try {
     const companyId = await resolveCompanyId(appId);
@@ -36,11 +69,15 @@ export async function emitDashboardUpdate(appId: string): Promise<void> {
 
     const apps = await ApplicationModel.find({ companyId }).select('appId');
     const appIds = apps.map((a) => a.appId);
-    const activeVisitors = await countActiveVisitors(appIds);
+    const [activeVisitors, byCountry] = await Promise.all([
+      countActiveVisitors(appIds),
+      countActiveVisitorsByCountry(appIds),
+    ]);
 
     pushToAccount(companyId, 'dashboard:update', {
       accountId: companyId,
       activeVisitors,
+      byCountry,
       computedAt: new Date().toISOString(),
     });
 

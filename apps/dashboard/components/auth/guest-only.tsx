@@ -6,14 +6,14 @@ import { useEffect, type ReactNode } from 'react';
 import { FullPageSpinner } from '@/components/ui/spinner';
 
 export function GuestOnly({ children }: { children: ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.push('/dashboard');
+      router.push(user?.role === 'admin' ? '/admin/companies' : '/dashboard');
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, user, router]);
 
   if (isLoading) return <FullPageSpinner />;
   if (isAuthenticated) return null;

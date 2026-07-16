@@ -164,8 +164,8 @@ function SidebarContent({
   const isMember = user?.role === 'webmaster' && user?.teamRole === 'member';
 
   return (
-    <>
-      <div className="flex flex-col gap-6 p-5">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-5">
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
             <svg className="h-4 w-4 text-[#05070d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -198,7 +198,7 @@ function SidebarContent({
         </nav>
       </div>
 
-      <div className="mt-auto flex flex-col gap-3 border-t border-border-subtle p-5">
+      <div className="shrink-0 flex flex-col gap-3 border-t border-border-subtle p-5">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
@@ -218,7 +218,7 @@ function SidebarContent({
           <span className="font-medium">{tNav('logout')}</span>
         </button>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -262,10 +262,10 @@ export function Sidebar() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-border-subtle bg-[var(--bg-sidebar)] transition-transform duration-300 ease-in-out lg:static lg:z-auto lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-72 flex-col border-r border-border-subtle bg-[var(--bg-sidebar)] transition-transform duration-300 ease-in-out lg:static lg:z-auto lg:h-full lg:shrink-0 lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'
           }`}
       >
-        <div className="flex items-center justify-end border-b border-border-subtle p-3 lg:hidden">
+        <div className="flex shrink-0 items-center justify-end border-b border-border-subtle p-3 lg:hidden">
           <button
             type="button"
             onClick={() => setOpen(false)}

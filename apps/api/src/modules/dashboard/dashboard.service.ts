@@ -1,6 +1,9 @@
 import type { PipelineStage } from 'mongoose';
 import { EventModel } from '../../models/event.js';
 import { ApplicationModel } from '../../models/application.js';
+import { getWidgets } from './widget.service.js';
+import { buildPipeline } from '../analytics/analytics.engine.js';
+import type { WidgetConfig as AnalyticsWidgetConfig } from '../analytics/analytics.engine.js';
 
 const PERIOD_MS: Record<string, number> = {
   '24h': 24 * 60 * 60 * 1000,
@@ -49,7 +52,14 @@ export async function getOverviewData(companyId: string, period: string, appId?:
 
   if (appIds.length === 0) {
     return {
-      kpis: { sessions: 0, pageViews: 0, bounceRate: 0, avgDuration: '0m 0s', sessionsDelta: 0, pageViewsDelta: 0 },
+      kpis: {
+        sessions: 0,
+        pageViews: 0,
+        bounceRate: 0,
+        avgDuration: '0m 0s',
+        sessionsDelta: 0,
+        pageViewsDelta: 0,
+      },
       traffic: [],
       topPages: [],
       sources: [],
@@ -104,14 +114,16 @@ export async function getOverviewData(companyId: string, period: string, appId?:
     pageviewSessionCount: 0,
   };
 
-  const avgDurationSec = kpi.uniqueSessions > 0
-    ? Math.round(kpi.totalDuration / kpi.uniqueSessions)
-    : 0;
+  const avgDurationSec =
+    kpi.uniqueSessions > 0 ? Math.round(kpi.totalDuration / kpi.uniqueSessions) : 0;
   const avgDurationStr = `${Math.floor(avgDurationSec / 60)}m ${avgDurationSec % 60}s`;
 
-  const bounceRate = kpi.uniqueSessions > 0
-    ? Math.round((kpi.pageviewSessionCount > 0 ? kpi.pageviewSessionCount / kpi.uniqueSessions : 0) * 100)
-    : 0;
+  const bounceRate =
+    kpi.uniqueSessions > 0
+      ? Math.round(
+          (kpi.pageviewSessionCount > 0 ? kpi.pageviewSessionCount / kpi.uniqueSessions : 0) * 100,
+        )
+      : 0;
 
   const prev = getPreviousPeriodDates(period);
   const prevKpiPipeline: PipelineStage[] = [
@@ -139,12 +151,16 @@ export async function getOverviewData(companyId: string, period: string, appId?:
   const prevKpiResult = await EventModel.aggregate(prevKpiPipeline);
   const prevKpi = prevKpiResult[0] ?? { pageViews: 0, uniqueSessions: 0 };
 
-  const sessionsDelta = prevKpi.uniqueSessions > 0
-    ? Math.round(((kpi.uniqueSessions - prevKpi.uniqueSessions) / prevKpi.uniqueSessions) * 1000) / 10
-    : 0;
-  const pageViewsDelta = prevKpi.pageViews > 0
-    ? Math.round(((kpi.pageViews - prevKpi.pageViews) / prevKpi.pageViews) * 1000) / 10
-    : 0;
+  const sessionsDelta =
+    prevKpi.uniqueSessions > 0
+      ? Math.round(
+          ((kpi.uniqueSessions - prevKpi.uniqueSessions) / prevKpi.uniqueSessions) * 1000,
+        ) / 10
+      : 0;
+  const pageViewsDelta =
+    prevKpi.pageViews > 0
+      ? Math.round(((kpi.pageViews - prevKpi.pageViews) / prevKpi.pageViews) * 1000) / 10
+      : 0;
 
   const trafficPipeline: PipelineStage[] = [
     matchStage,
@@ -242,7 +258,6 @@ export async function getOverviewData(companyId: string, period: string, appId?:
     color: sourceColors[s._id] || '#6b7280',
   }));
 
-
   const activeSince = new Date(Date.now() - 5 * 60 * 1000);
   const activePagesPipeline: PipelineStage[] = [
     {
@@ -305,4 +320,37 @@ export async function getOverviewData(companyId: string, period: string, appId?:
     devices,
     activePages,
   };
+}
+
+const ENGINE_TYPE_MAP: Record<string, AnalyticsWidgetConfig['type']> = {
+  kpi: 'kpi',
+  'area-chart': 'timeseries',
+  heatmap: 'heatmap',
+};
+
+export async function getWidgetData(
+  companyId: string,
+  widgetId: string,
+  period: { start: Date; end: Date },
+) {
+  const widgets = await getWidgets(companyId);
+  const widget = widgets.find((w) => w.widgetId === widgetId);
+  if (!widget) return null;
+
+  const engineType = ENGINE_TYPE_MAP[widget.type];
+  if (!engineType) return [];
+
+  const config: AnalyticsWidgetConfig = {
+    type: engineType,
+    appId: widget.config?.metric ?? '',
+    metric: widget.config?.metric ?? '',
+    filters: widget.config?.filters ?? [],
+    period,
+    step: widget.config?.step,
+    mode: widget.config?.mode ?? 'count',
+    pageUrl: widget.config?.pageUrl,
+  };
+
+  const pipeline = buildPipeline(config);
+  return EventModel.aggregate(pipeline);
 }

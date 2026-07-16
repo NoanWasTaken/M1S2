@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/providers/auth-provider';
-import { fetchUsers, impersonate, deleteUser, permanentlyDeleteUser, activateUser, type AdminUser } from '@/lib/admin-api';
+import { fetchUsers, impersonate, deleteUser, permanentlyDeleteUser, activateUser, rejectUser, type AdminUser } from '@/lib/admin-api';
 import { Card } from '@/components/ui/card';
 
 function roleLabel(u: AdminUser, t: (k: string) => string): string {
@@ -40,6 +40,17 @@ export default function AdminUsersPage() {
         setBusyId(u._id);
         try {
             await activateUser(u._id);
+            await load();
+        } finally {
+            setBusyId(null);
+        }
+    };
+
+    const handleReject = async (u: AdminUser) => {
+        if (!confirm(t('rejectUserConfirm'))) return;
+        setBusyId(u._id);
+        try {
+            await rejectUser(u._id);
             await load();
         } finally {
             setBusyId(null);
@@ -131,14 +142,24 @@ export default function AdminUsersPage() {
                                     <td className="py-3 text-right">
                                         <div className="flex items-center justify-end gap-2">
                                             {u.status === 'pending' && (
-                                                <button
-                                                    type="button"
-                                                    disabled={busyId === u._id}
-                                                    onClick={() => handleActivate(u)}
-                                                    className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-[#05070d] transition-opacity hover:opacity-90 disabled:opacity-50"
-                                                >
-                                                    {t('accept')}
-                                                </button>
+                                                <>
+                                                    <button
+                                                        type="button"
+                                                        disabled={busyId === u._id}
+                                                        onClick={() => handleActivate(u)}
+                                                        className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-[#05070d] transition-opacity hover:opacity-90 disabled:opacity-50"
+                                                    >
+                                                        {t('accept')}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        disabled={busyId === u._id}
+                                                        onClick={() => handleReject(u)}
+                                                        className="rounded-md border border-danger/40 px-3 py-1.5 text-xs font-medium text-danger transition-colors hover:bg-danger/10 disabled:opacity-50"
+                                                    >
+                                                        {t('reject')}
+                                                    </button>
+                                                </>
                                             )}
                                             {u.status === 'suspended' && (
                                                 <>

@@ -9,9 +9,14 @@ import type { RegisterInput, LoginInput } from './auth.schema.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken, type TokenPayload } from './jwt.js';
 import { env } from '../../config/env.js';
 import { pushToAdmins } from '../../realtime/sse-registry.js';
+import { kbisExists } from '../../utils/kbis-storage.js';
 
 export async function registerWebmaster(input: RegisterInput) {
     const email = input.user.email.toLowerCase();
+
+    if (!kbisExists(input.company.kbisFileRef)) {
+        throw new AppError(400, 'invalid_kbis', 'KBIS document is missing or invalid.');
+    }
 
     const existing = await UserModel.findOne({ email });
     if (existing) {

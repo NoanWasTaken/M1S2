@@ -9,7 +9,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <ProtectedRoute>
       <ApplicationProvider>
-        <div className="flex min-h-dvh bg-(--bg-page)">
+        <div className="flex h-dvh overflow-hidden bg-(--bg-page)">
           <Sidebar />
           <main className="flex min-h-0 flex-1 flex-col overflow-auto pt-14 lg:pt-0">
             <ImpersonationBanner />

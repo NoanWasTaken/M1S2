@@ -10,11 +10,13 @@ import {
     validateCompany,
     rejectCompany,
     activateUser,
+    rejectUser,
     deleteUser,
     permanentlyDeleteUser,
     deleteCompany,
     impersonateWebmaster,
     getCompanyDetail,
+    getCompanyKbisPath,
 } from './admin.service.js';
 import { getPlatformStats } from './stats.service.js';
 
@@ -45,6 +47,14 @@ export async function getCompany(req: Request, res: Response) {
     res.json(detail);
 }
 
+export async function getCompanyKbis(req: Request, res: Response) {
+    assertValidObjectId(req.params.id);
+    const { filePath, fileName } = await getCompanyKbisPath(req.params.id as string);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
+    res.sendFile(filePath);
+}
+
 export async function getUsers(_req: Request, res: Response) {
     const users = await listUsers();
     res.json({ users });
@@ -70,6 +80,11 @@ export async function postRejectCompany(req: Request, res: Response) {
 export async function activateUserController(req: Request, res: Response) {
     assertValidObjectId(req.params.id);
     res.json(await activateUser(req.params.id as string));
+}
+
+export async function rejectUserController(req: Request, res: Response) {
+    assertValidObjectId(req.params.id);
+    res.json(await rejectUser(req.params.id as string));
 }
 
 export async function deleteUserController(req: Request, res: Response) {
