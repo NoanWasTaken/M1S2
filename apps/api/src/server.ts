@@ -24,8 +24,14 @@ import publicRouter from './modules/public/public.routes.js';
 
 const dashboardOrigins = new Set([env.corsOrigin, ...env.corsExtraOrigins]);
 
-function dashboardCorsOrigin(origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
-  if (!origin) { callback(null, true); return; }
+function dashboardCorsOrigin(
+  origin: string | undefined,
+  callback: (err: Error | null, allow?: boolean) => void,
+) {
+  if (!origin) {
+    callback(null, true);
+    return;
+  }
   callback(null, dashboardOrigins.has(origin));
 }
 
@@ -34,14 +40,21 @@ async function start() {
 
   const app = express();
   app.set('trust proxy', 1);
-  app.use(helmet({
-    crossOriginResourcePolicy: { policy: 'cross-origin' },
-    strictTransportSecurity: { maxAge: 31536000, includeSubDomains: true },
-  }));
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      strictTransportSecurity: { maxAge: 31536000, includeSubDomains: true },
+    }),
+  );
   app.use(express.json());
   app.use(cookieParser());
 
-  const ingestionCors = cors({ origin: true, methods: ['POST', 'OPTIONS'], allowedHeaders: ['Content-Type', 'x-app-id'] });
+  const ingestionCors = cors({
+    origin: true,
+    credentials: true,
+    methods: ['POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'x-app-id'],
+  });
   const ingestionHelmet = helmet({ crossOriginResourcePolicy: false });
   app.use('/api/v1/ingestion', ingestionHelmet, ingestionCors, ingestionRouter);
 
@@ -49,7 +62,9 @@ async function start() {
 
   app.use(cors({ origin: dashboardCorsOrigin, credentials: true }));
 
-  app.get('/health', (_req, res) => { res.json({ status: 'ok' }); });
+  app.get('/health', (_req, res) => {
+    res.json({ status: 'ok' });
+  });
 
   app.use('/api/v1/auth', authRouter);
   app.use('/api/v1/admin', adminRouter);
