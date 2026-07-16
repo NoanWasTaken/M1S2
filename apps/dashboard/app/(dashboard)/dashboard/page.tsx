@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { HelpButton } from '@/components/ui/help-button';
+import { WidgetBuilderModal } from '@/components/dashboard/widget-builder-modal';
 import { KpiCard, KpiGrid } from '@/components/dashboard/kpi-card';
 import { AreaChart } from '@/components/dashboard/area-chart';
 import { LiveList } from '@/components/dashboard/live-list';
@@ -10,13 +12,14 @@ import { DonutChart } from '@/components/dashboard/donut-chart';
 import { ProgressList } from '@/components/dashboard/progress-list';
 import { Header } from '@/components/dashboard/header';
 import { WidgetGrid, type WidgetDef } from '@/components/dashboard/widget-grid';
-import { WidgetRenderer } from '@/components/dashboard/widget';
+import { WidgetRenderer, renderWidgetBody } from '@/components/dashboard/widget';
 import { fetchDashboardData, mockDashboardData, type DashboardData } from '@/lib/dashboard-api';
 import { api } from '@/lib/api-client';
 import { useDashboardStream as useDashboardSocket } from '@/lib/dashboard-stream';
 import { useApplications } from '@/providers/application-provider';
 import { AudiencePeakBanner } from '@/components/dashboard/audience-peak-banner';
 import { GlobeWidget } from '@/components/dashboard/globe-widget';
+import { Card } from '@/components/ui/card';
 
 const COLUMNS = 12;
 
@@ -49,9 +52,11 @@ function buildDataSources(data: DashboardData): Record<string, unknown> {
 function StaticDashboard({
   widgets,
   dataSources,
+  appId,
 }: {
   widgets: WidgetDef[];
   dataSources: Record<string, unknown>;
+  appId: string;
 }) {
   const rows = useMemo(() => {
     const sorted = [...widgets].sort((a, b) => a.position.y - b.position.y || a.position.x - b.position.x);
@@ -86,7 +91,7 @@ function StaticDashboard({
           return (
             <div key={w.widgetId} className="grid grid-cols-1 gap-4 lg:grid-cols-3 items-start">
               <div className={colSpanClass(span(w.position.w))}>
-                <StaticWidget widget={w} dataSources={dataSources} />
+                <StaticWidget widget={w} dataSources={dataSources} appId={appId} />
               </div>
             </div>
           );
@@ -96,13 +101,13 @@ function StaticDashboard({
           <div key={row.y} className="grid grid-cols-1 gap-4 lg:grid-cols-3 items-start">
             {row.left.map((w) => (
               <div key={w.widgetId} className={colSpanClass(span(w.position.w))}>
-                <StaticWidget widget={w} dataSources={dataSources} />
+                <StaticWidget widget={w} dataSources={dataSources} appId={appId} />
               </div>
             ))}
             {row.right.length > 0 && (
               <div className="flex flex-col gap-4 lg:col-span-1">
                 {row.right.map((w) => (
-                  <StaticWidget key={w.widgetId} widget={w} dataSources={dataSources} />
+                  <StaticWidget key={w.widgetId} widget={w} dataSources={dataSources} appId={appId} />
                 ))}
               </div>
             )}
@@ -113,32 +118,39 @@ function StaticDashboard({
   );
 }
 
-function StaticWidget({
-  widget,
-  dataSources,
-}: {
-  widget: WidgetDef;
-  dataSources: Record<string, unknown>;
-}) {
-  const data = dataSources[widget.type];
+function isCustomWidget(w: WidgetDef): boolean {
+  return !!w.config?.metric;
+}
+
+function StaticWidget({ widget, dataSources, appId }: { widget: WidgetDef; dataSources: Record<string, unknown>; appId: string }) {
+  const t = useTranslations('dashboard');
+  if (isCustomWidget(widget)) {
+    return (
+      <Card className="flex h-full flex-col">
+        {renderWidgetBody(widget, null, t, appId, dataSources)}
+      </Card>
+    );
+  }
+
+  const data = dataSources[widget.type] as DashboardData[keyof DashboardData] ?? null;
 
   switch (widget.type) {
     case 'kpi':
       return (
         <KpiGrid>
-          {(data as DashboardData['kpi']).map((kpi) => (
+          {((data ?? []) as DashboardData['kpi']).map((kpi) => (
             <KpiCard key={kpi.id} id={kpi.id} value={kpi.value} delta={kpi.delta} ratio={kpi.ratio} />
           ))}
         </KpiGrid>
       );
     case 'area-chart':
-      return <AreaChart data={data as DashboardData['traffic']} />;
+      return <AreaChart data={(data ?? []) as DashboardData['traffic']} />;
     case 'live-list':
-      return <LiveList data={data as DashboardData['activePages']} />;
+      return <LiveList data={(data ?? []) as DashboardData['activePages']} />;
     case 'data-table':
-      return <DataTable data={data as DashboardData['topPages']} />;
+      return <DataTable data={(data ?? []) as DashboardData['topPages']} />;
     case 'donut-chart':
-      return <DonutChart data={data as DashboardData['sources']} />;
+      return <DonutChart data={(data ?? []) as DashboardData['sources']} />;
     case 'progress-list':
       return <ProgressList data={data as DashboardData['devices']} />;
     case 'globe':
@@ -168,6 +180,7 @@ export default function OverviewPage() {
   const { selectedAppId } = useApplications();
   const [widgets, setWidgets] = useState<WidgetDef[]>([]);
   const [isEditing, setIsEditing] = useState(false);
+  const [builderOpen, setBuilderOpen] = useState(false);
   const [canEditLayout, setCanEditLayout] = useState(false);
   const [period, setPeriod] = useState('24h');
   const [data, setData] = useState<DashboardData>(mockDashboardData);
@@ -209,10 +222,44 @@ export default function OverviewPage() {
     },
   });
 
+  const saveWidgets = useCallback((updated: WidgetDef[]) => {
+    api.put('/api/v1/dashboard/widgets', { widgets: updated }).catch((err) => {
+      const detail = err.response?.data ?? err.message;
+      console.error('save widgets failed:', JSON.stringify(detail));
+    });
+  }, []);
+
   const handleLayoutChange = useCallback((updated: WidgetDef[]) => {
     setWidgets(updated);
-    api.put('/api/v1/dashboard/widgets', { widgets: updated }).catch(() => { });
-  }, []);
+    saveWidgets(updated);
+  }, [saveWidgets]);
+
+  const handleAddWidget = useCallback((form: { type: string; title: string; metric: string; mode: string; step: string; pageUrl: string; filters: { field: string; value: string }[] }) => {
+    const maxY = widgets.reduce((max, w) => Math.max(max, w.position.y + w.position.h), 0);
+    const newWidget: WidgetDef = {
+      widgetId: crypto.randomUUID(),
+      type: form.type === 'timeseries' ? 'area-chart' : form.type,
+      title: form.title || form.type,
+      position: { x: 0, y: maxY, w: 6, h: 4 },
+      config: {
+        metric: form.metric,
+        mode: form.mode,
+        step: form.step,
+        pageUrl: form.pageUrl || undefined,
+        filters: form.filters.filter((f) => f.field),
+      },
+    };
+    const updated = [...widgets, newWidget];
+    setWidgets(updated);
+    saveWidgets(updated);
+    setBuilderOpen(false);
+  }, [widgets, saveWidgets]);
+
+  const handleDeleteWidget = useCallback((widgetId: string) => {
+    const updated = widgets.filter((w) => w.widgetId !== widgetId);
+    setWidgets(updated);
+    saveWidgets(updated);
+  }, [widgets, saveWidgets]);
 
   return (
     <>
@@ -229,15 +276,23 @@ export default function OverviewPage() {
           <WidgetGrid
             widgets={widgets}
             onLayoutChange={handleLayoutChange}
-            renderWidget={(w) => <WidgetRenderer widget={w} />}
+            renderWidget={(w) => <WidgetRenderer widget={w} appId={selectedAppId ?? ''} />}
+            onAddWidget={() => setBuilderOpen(true)}
+            onDeleteWidget={handleDeleteWidget}
           />
         </div>
       ) : (
-        <StaticDashboard widgets={widgets} dataSources={dataSources} />
+        <StaticDashboard widgets={widgets} dataSources={dataSources} appId={selectedAppId ?? ''} />
       )}
 
       <HelpButton />
       <AudiencePeakBanner alert={peakAlert} />
+
+      <WidgetBuilderModal
+        open={builderOpen}
+        onClose={() => setBuilderOpen(false)}
+        onSave={handleAddWidget}
+      />
     </>
   );
 }
