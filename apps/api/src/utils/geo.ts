@@ -23,8 +23,8 @@ async function loadGeoip(): Promise<GeoipModule | null> {
     if (geoipLoaded) return geoip;
     geoipLoaded = true;
     try {
-        const mod: any = await import('geoip-lite');
-        geoip = (mod.default ?? mod) as GeoipModule;
+        const mod = (await import('geoip-lite')) as { default?: GeoipModule } & GeoipModule;
+        geoip = mod.default ?? mod;
     } catch {
         geoip = null;
     }
