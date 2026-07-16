@@ -85,7 +85,17 @@ export function startAutoCapture(track: TrackFn): void {
     document.addEventListener('click', (e) => {
         const el = findInteractive(e.target);
         if (!el) return;
-        track('click', { x: e.clientX, y: e.clientY, ...describe(el) });
+        const px = e.pageX || e.clientX + window.scrollX;
+        const py = e.pageY || e.clientY + window.scrollY;
+        track('click', {
+            x: e.clientX,
+            y: e.clientY,
+            px,
+            py,
+            pw: document.documentElement.scrollWidth,
+            ph: document.documentElement.scrollHeight,
+            ...describe(el),
+        });
     });
 
     let lastHovered: HTMLElement | null = null;

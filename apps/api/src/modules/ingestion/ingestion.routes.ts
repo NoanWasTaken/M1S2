@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { authenticateApp } from '../../middlewares/authenticate-app.js';
 import { postBrowserEvents, postServerEvents } from './ingestion.controller.js';
 import { authenticateServer } from '../../middlewares/authenticate-server.js';
@@ -11,7 +11,7 @@ const ingestionLimiter = rateLimit({
     limit: 120,
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => req.header('x-app-id') || req.ip || 'unknown',
+    keyGenerator: (req) => req.header('x-app-id') || ipKeyGenerator(req.ip ?? '127.0.0.1') || 'unknown',
 });
 
 router.post('/browser', ingestionLimiter, authenticateApp, postBrowserEvents);
