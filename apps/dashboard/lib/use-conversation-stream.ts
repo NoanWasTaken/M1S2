@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { getAccessToken, refreshAccessToken } from './api-client';
+import { refreshAccessToken } from './api-client';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const SSE_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/realtime/stream`;
 
 export type SupportMessageEvent = {
   messageId: string;
@@ -110,13 +110,8 @@ export function useConversationStream(options: UseConversationStreamOptions = {}
     function connect() {
       if (cancelled) return;
 
-      const token = getAccessToken();
-      const url = token
-        ? `${API_URL}/api/v1/realtime/stream?token=${token}`
-        : `${API_URL}/api/v1/realtime/stream`;
-
       es?.close();
-      es = new EventSource(url);
+      es = new EventSource(SSE_URL, { withCredentials: true });
 
       attachHandlers(es, handlersRef);
     }

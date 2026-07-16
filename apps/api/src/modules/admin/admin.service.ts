@@ -1,6 +1,8 @@
+import crypto from 'crypto';
 import { CompanyModel } from '../../models/company.js';
 import { UserModel } from '../../models/user.js';
 import { ApplicationModel } from '../../models/application.js';
+import { RefreshTokenModel } from '../../models/refresh-token.js';
 import { AppError } from '../../utils/app-error.js';
 import { signAccessToken, signRefreshToken } from '../auth/jwt.js';
 import { sendCompanyValidatedEmail, sendCompanyRejectedEmail } from '../../utils/email.js';
@@ -161,9 +163,18 @@ export async function impersonateWebmaster(webmasterId: string, adminId: string)
         impersonatedBy: adminId,
     };
 
+    const jti = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+    await RefreshTokenModel.create({
+        jti,
+        userId: webmaster._id,
+        expiresAt,
+        impersonatedBy: adminId,
+    });
+
     return {
         accessToken: signAccessToken(payload),
-        refreshToken: signRefreshToken(payload),
+        refreshToken: signRefreshToken(payload, { jti, expiresIn: 3600 }),
         impersonating: {
             id: webmaster._id,
             email: webmaster.email,

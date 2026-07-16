@@ -11,6 +11,7 @@ const ingestionLimiter = rateLimit({
     limit: 120,
     standardHeaders: true,
     legacyHeaders: false,
+    keyGenerator: (req) => req.header('x-app-id') || req.ip || 'unknown',
 });
 
 router.post('/browser', ingestionLimiter, authenticateApp, postBrowserEvents);

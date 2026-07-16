@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import { env } from '../../config/env.js';
 import { AppError } from '../../utils/app-error.js';
-import { verifyRefreshToken, signAccessToken } from '../auth/jwt.js';
+import { assertValidObjectId } from '../../utils/validate-id.js';
+import { refreshUserSession } from '../auth/auth.service.js';
 import {
     listCompanies,
     listUsers,
@@ -39,6 +40,7 @@ export async function getStats(_req: Request, res: Response) {
 }
 
 export async function getCompany(req: Request, res: Response) {
+    assertValidObjectId(req.params.id);
     const detail = await getCompanyDetail(req.params.id as string);
     res.json(detail);
 }
@@ -54,28 +56,34 @@ export async function getPendingCount(_req: Request, res: Response) {
 }
 
 export async function postValidateCompany(req: Request, res: Response) {
+    assertValidObjectId(req.params.id);
     const company = await validateCompany(req.params.id as string, req.user!.sub);
     res.json({ company });
 }
 
 export async function postRejectCompany(req: Request, res: Response) {
+    assertValidObjectId(req.params.id);
     const company = await rejectCompany(req.params.id as string);
     res.json({ company });
 }
 
 export async function activateUserController(req: Request, res: Response) {
+    assertValidObjectId(req.params.id);
     res.json(await activateUser(req.params.id as string));
 }
 
 export async function deleteUserController(req: Request, res: Response) {
+    assertValidObjectId(req.params.id);
     res.json(await deleteUser(req.params.id as string));
 }
 
 export async function permanentlyDeleteUserController(req: Request, res: Response) {
+    assertValidObjectId(req.params.id);
     res.json(await permanentlyDeleteUser(req.params.id as string));
 }
 
 export async function deleteCompanyController(req: Request, res: Response) {
+    assertValidObjectId(req.params.id);
     res.json(await deleteCompany(req.params.id as string));
 }
 
@@ -85,6 +93,7 @@ export async function postImpersonate(req: Request, res: Response) {
         throw new AppError(401, 'no_refresh_token', 'No admin session found.');
     }
 
+    assertValidObjectId(req.params.id);
     const { accessToken, refreshToken, impersonating } = await impersonateWebmaster(
         req.params.id as string,
         req.user!.sub,
@@ -102,21 +111,9 @@ export async function postStopImpersonate(req: Request, res: Response) {
         throw new AppError(400, 'not_impersonating', 'No impersonation in progress.');
     }
 
-    let payload;
-    try {
-        payload = verifyRefreshToken(adminRefreshToken);
-    } catch {
-        throw new AppError(401, 'invalid_refresh_token', 'Admin session expired. Please log in again.');
-    }
+    const { accessToken, refreshToken: newRefreshToken } = await refreshUserSession(adminRefreshToken);
 
-    const accessToken = signAccessToken({
-        sub: payload.sub,
-        role: payload.role,
-        companyId: payload.companyId,
-        teamRole: payload.teamRole,
-    });
-
-    res.cookie('refreshToken', adminRefreshToken, cookieOptions());
+    res.cookie('refreshToken', newRefreshToken, cookieOptions());
     res.clearCookie('adminRefreshToken', cookieOptions());
 
     res.json({ accessToken });

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { AppError } from '../../utils/app-error.js';
+import { assertValidObjectId } from '../../utils/validate-id.js';
 import {
   createConversationSchema,
   sendMessageSchema,
@@ -34,7 +35,7 @@ function creator(req: Request) {
 export async function getConversations(req: Request, res: Response) {
   const query = conversationQuerySchema.safeParse(req.query);
   if (!query.success) {
-    throw new AppError(400, 'invalid_query', query.error.issues[0]?.message ?? 'Invalid query.');
+    throw new AppError(400, 'invalid_query', 'Invalid query.');
   }
 
   const result = await listConversations(creator(req), query.data);
@@ -42,6 +43,7 @@ export async function getConversations(req: Request, res: Response) {
 }
 
 export async function getConversationById(req: Request, res: Response) {
+  assertValidObjectId(req.params.id);
   const conversation = await getConversation(req.params.id as string, creator(req));
   res.json({ conversation });
 }
@@ -49,7 +51,7 @@ export async function getConversationById(req: Request, res: Response) {
 export async function postConversation(req: Request, res: Response) {
   const result = createConversationSchema.safeParse(req.body);
   if (!result.success) {
-    throw new AppError(400, 'invalid_input', result.error.issues[0]?.message ?? 'Invalid data.');
+    throw new AppError(400, 'invalid_input', 'Invalid data.');
   }
 
   const conversation = await createConversation(creator(req), result.data);
@@ -59,7 +61,7 @@ export async function postConversation(req: Request, res: Response) {
 export async function postInternalConversation(req: Request, res: Response) {
   const result = createConversationSchema.safeParse(req.body);
   if (!result.success) {
-    throw new AppError(400, 'invalid_input', result.error.issues[0]?.message ?? 'Invalid data.');
+    throw new AppError(400, 'invalid_input', 'Invalid data.');
   }
 
   const conversation = await createInternalConversation(creator(req), result.data);
@@ -67,6 +69,7 @@ export async function postInternalConversation(req: Request, res: Response) {
 }
 
 export async function getConversationMessages(req: Request, res: Response) {
+  assertValidObjectId(req.params.id);
   const page = Math.max(1, parseInt(req.query.page as string) || 1);
   const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
 
@@ -75,9 +78,10 @@ export async function getConversationMessages(req: Request, res: Response) {
 }
 
 export async function postConversationMessage(req: Request, res: Response) {
+  assertValidObjectId(req.params.id);
   const result = sendMessageSchema.safeParse(req.body);
   if (!result.success) {
-    throw new AppError(400, 'invalid_input', result.error.issues[0]?.message ?? 'Invalid data.');
+    throw new AppError(400, 'invalid_input', 'Invalid data.');
   }
 
   const message = await sendMessage(req.params.id as string, creator(req), result.data);
@@ -85,9 +89,10 @@ export async function postConversationMessage(req: Request, res: Response) {
 }
 
 export async function patchConversationStatus(req: Request, res: Response) {
+  assertValidObjectId(req.params.id);
   const result = updateStatusSchema.safeParse(req.body);
   if (!result.success) {
-    throw new AppError(400, 'invalid_input', result.error.issues[0]?.message ?? 'Invalid data.');
+    throw new AppError(400, 'invalid_input', 'Invalid data.');
   }
 
   const conversation = await updateConversationStatus(req.params.id as string, creator(req), result.data.status);
@@ -95,9 +100,10 @@ export async function patchConversationStatus(req: Request, res: Response) {
 }
 
 export async function patchConversationAssign(req: Request, res: Response) {
+  assertValidObjectId(req.params.id);
   const result = assignConversationSchema.safeParse(req.body);
   if (!result.success) {
-    throw new AppError(400, 'invalid_input', result.error.issues[0]?.message ?? 'Invalid data.');
+    throw new AppError(400, 'invalid_input', 'Invalid data.');
   }
 
   const conversation = await assignConversation(req.params.id as string, creator(req), result.data.assignToId);
@@ -110,15 +116,17 @@ export async function getUnreadCountHandler(req: Request, res: Response) {
 }
 
 export async function postTypingIndicator(req: Request, res: Response) {
+  assertValidObjectId(req.params.id);
   const isTyping = req.body?.isTyping === true;
   await sendTypingIndicator(req.params.id as string, creator(req), isTyping);
   res.json({ ok: true });
 }
 
 export async function postCallSignal(req: Request, res: Response) {
+  assertValidObjectId(req.params.id);
   const result = callSignalSchema.safeParse(req.body);
   if (!result.success) {
-    throw new AppError(400, 'invalid_input', result.error.issues[0]?.message ?? 'Invalid call signal.');
+    throw new AppError(400, 'invalid_input', 'Invalid call signal.');
   }
 
   const callData: { type: 'offer' | 'answer' | 'candidate' | 'state'; payload: unknown; sessionId?: string } = {

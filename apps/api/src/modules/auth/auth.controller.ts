@@ -21,8 +21,7 @@ function refreshCookieOptions() {
 export async function register(req: Request, res: Response) {
   const result = registerSchema.safeParse(req.body);
   if (!result.success) {
-    const firstIssue = result.error.issues[0];
-    throw new AppError(400, 'invalid_input', firstIssue?.message ?? 'Invalid data.');
+    throw new AppError(400, 'invalid_input', 'Invalid data.');
   }
 
   const created = await registerWebmaster(result.data);
@@ -41,11 +40,14 @@ export async function login(req: Request, res: Response) {
 export async function refresh(req: Request, res: Response) {
   const token = req.cookies?.refreshToken;
   if (!token) throw new AppError(401, 'no_refresh_token', 'No refresh token provided.');
-  const { accessToken } = await refreshUserSession(token);
+  const { accessToken, refreshToken: newRefreshToken } = await refreshUserSession(token);
+  res.cookie('refreshToken', newRefreshToken, refreshCookieOptions());
   res.json({ accessToken });
 }
 
-export async function logout(_req: Request, res: Response) {
+export async function logout(req: Request, res: Response) {
+  const token = req.cookies?.refreshToken;
+
   res.clearCookie('refreshToken', {
     httpOnly: true,
     secure: isProd,
@@ -53,7 +55,7 @@ export async function logout(_req: Request, res: Response) {
     ...(isProd && env.cookieDomain ? { domain: env.cookieDomain } : {}),
   });
 
-  const result = await logoutUser();
+  const result = await logoutUser(token);
   res.json(result);
 }
 
@@ -71,7 +73,7 @@ export async function forgotPassword(req: Request, res: Response) {
 
 export async function resetPasswordController(req: Request, res: Response) {
   const result = resetPasswordSchema.safeParse(req.body);
-  if (!result.success) throw new AppError(400, 'invalid_input', result.error.issues[0]?.message ?? 'Invalid data.');
+  if (!result.success) throw new AppError(400, 'invalid_input', 'Invalid data.');
   await resetPassword(result.data.token, result.data.password);
   res.json({ message: 'Password reset.' });
 }
@@ -84,7 +86,7 @@ export async function getInvitation(req: Request, res: Response) {
 export async function postAcceptInvitation(req: Request, res: Response) {
   const result = acceptInvitationSchema.safeParse(req.body);
   if (!result.success) {
-    throw new AppError(400, 'invalid_input', result.error.issues[0]?.message ?? 'Invalid data.');
+    throw new AppError(400, 'invalid_input', 'Invalid data.');
   }
   const user = await acceptInvitation(result.data.token, result.data.password);
   res.status(201).json({ user });

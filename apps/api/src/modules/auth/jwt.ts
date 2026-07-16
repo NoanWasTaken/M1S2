@@ -7,14 +7,18 @@ export type TokenPayload = {
     companyId?: string;
     teamRole?: 'owner' | 'member' | null;
     impersonatedBy?: string;
+    jti?: string;
 };
 
 export function signAccessToken(payload: TokenPayload): string {
     return jwt.sign(payload, env.jwtAccessSecret, { expiresIn: '15m' });
 }
 
-export function signRefreshToken(payload: TokenPayload): string {
-    return jwt.sign(payload, env.jwtRefreshSecret, { expiresIn: '7d' });
+export function signRefreshToken(payload: TokenPayload, options?: { expiresIn?: number; jti?: string }): string {
+    return jwt.sign(payload, env.jwtRefreshSecret, {
+        expiresIn: options?.expiresIn ?? 7 * 24 * 60 * 60,
+        jwtid: options?.jti,
+    });
 }
 
 export function verifyAccessToken(token: string): TokenPayload {

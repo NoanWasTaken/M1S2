@@ -1,13 +1,13 @@
 import argon2 from 'argon2';
+import crypto from 'crypto';
 import { CompanyModel } from '../../models/company.js';
 import { UserModel } from '../../models/user.js';
+import { RefreshTokenModel } from '../../models/refresh-token.js';
 import { AppError } from '../../utils/app-error.js';
-import { sendAdminNewCompanyEmail, sendConfirmationEmail } from '../../utils/email.js';
+import { sendAdminNewCompanyEmail, sendConfirmationEmail, sendPasswordResetEmail } from '../../utils/email.js';
 import type { RegisterInput, LoginInput } from './auth.schema.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken, type TokenPayload } from './jwt.js';
-import crypto from 'crypto';
 import { env } from '../../config/env.js';
-import { sendPasswordResetEmail } from '../../utils/email.js';
 import { pushToAdmins } from '../../realtime/sse-registry.js';
 
 export async function registerWebmaster(input: RegisterInput) {
@@ -82,8 +82,12 @@ export async function loginUser(input: LoginInput) {
         teamRole: user.teamRole,
     };
 
+    const jti = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await RefreshTokenModel.create({ jti, userId: user._id, expiresAt });
+
     const accessToken = signAccessToken(payload);
-    const refreshToken = signRefreshToken(payload);
+    const refreshToken = signRefreshToken(payload, { jti });
 
     return {
         accessToken,
@@ -100,22 +104,58 @@ export async function refreshUserSession(refreshToken: string) {
         throw new AppError(401, 'invalid_refresh_token', 'Invalid or expired refresh token.');
     }
 
+    if (payload.jti) {
+        const tokenDoc = await RefreshTokenModel.findOne({ jti: payload.jti });
+        if (!tokenDoc) {
+            throw new AppError(401, 'invalid_refresh_token', 'Refresh token has been revoked.');
+        }
+        await tokenDoc.deleteOne();
+    }
+
     const userExists = await UserModel.exists({ _id: payload.sub });
     if (!userExists) {
         throw new AppError(401, 'user_not_found', 'User no longer exists.');
     }
 
-    const accessToken = signAccessToken({
+    const newPayload = {
         sub: payload.sub,
         role: payload.role,
         companyId: payload.companyId,
         teamRole: payload.teamRole,
+        impersonatedBy: payload.impersonatedBy,
+    };
+
+    const newJti = crypto.randomUUID();
+    const ttl = payload.impersonatedBy ? 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
+    const expiresAt = new Date(Date.now() + ttl);
+    await RefreshTokenModel.create({
+        jti: newJti,
+        userId: payload.sub,
+        expiresAt,
+        impersonatedBy: payload.impersonatedBy ?? null,
     });
 
-    return { accessToken };
+    const accessToken = signAccessToken(newPayload);
+    const newRefreshToken = signRefreshToken(newPayload, {
+        jti: newJti,
+        expiresIn: payload.impersonatedBy ? 3600 : undefined,
+    });
+
+    return { accessToken, refreshToken: newRefreshToken };
 }
 
-export async function logoutUser() {
+export async function logoutUser(refreshToken?: string) {
+    if (refreshToken) {
+        try {
+            const payload = verifyRefreshToken(refreshToken);
+            if (payload.jti) {
+                await RefreshTokenModel.deleteOne({ jti: payload.jti });
+            }
+            await RefreshTokenModel.deleteMany({ userId: payload.sub });
+        } catch {
+
+        }
+    }
     return { message: 'Logged out' };
 }
 

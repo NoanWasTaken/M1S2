@@ -6,7 +6,11 @@ import { UserModel } from '../models/user.js';
 
 async function seedAdmin() {
     const email = process.env.ADMIN_EMAIL ?? 'admin@m1s2.local';
-    const password = process.env.ADMIN_PASSWORD ?? 'admin1234';
+    const password = process.env.ADMIN_PASSWORD;
+    if (!password) {
+        console.error('ADMIN_PASSWORD environment variable is required.');
+        process.exit(1);
+    }
 
     await mongoose.connect(env.mongoUri);
 
@@ -26,7 +30,7 @@ async function seedAdmin() {
         status: 'active',
     });
 
-    console.log(`Admin created: ${email} (password: ${password})`);
+    console.log(`Admin created: ${email}`);
     await mongoose.disconnect();
 }
 

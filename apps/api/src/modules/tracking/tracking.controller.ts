@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import { AppError } from '../../utils/app-error.js';
+import { assertValidObjectId } from '../../utils/validate-id.js';
 import {
     createConversionFunnel,
     createTrackingTag,
@@ -15,7 +17,6 @@ import {
     updateConversionFunnelCommentSchema,
     updateTrackingTagCommentSchema,
 } from './tracking.schema.js';
-import { AppError } from '../../utils/app-error.js';
 
 function getActor(req: Request) {
     return {
@@ -26,17 +27,19 @@ function getActor(req: Request) {
 }
 
 export async function getTags(req: Request, res: Response) {
+    assertValidObjectId(req.params.applicationId, 'applicationId');
     const applicationId = req.params.applicationId as string;
     const tags = await listTrackingTags(applicationId, getActor(req));
     res.json({ tags });
 }
 
 export async function postTag(req: Request, res: Response) {
+    assertValidObjectId(req.params.applicationId, 'applicationId');
     const applicationId = req.params.applicationId as string;
     const result = createTrackingTagSchema.safeParse(req.body);
 
     if (!result.success) {
-        throw new AppError(400, 'invalid_input', result.error.issues[0]?.message ?? 'Invalid data.');
+        throw new AppError(400, 'invalid_input', 'Invalid data.');
     }
 
     const tag = await createTrackingTag(applicationId, getActor(req), result.data.comment);
@@ -47,7 +50,7 @@ export async function patchTagComment(req: Request, res: Response) {
     const result = updateTrackingTagCommentSchema.safeParse(req.body);
 
     if (!result.success) {
-        throw new AppError(400, 'invalid_input', result.error.issues[0]?.message ?? 'Invalid data.');
+        throw new AppError(400, 'invalid_input', 'Invalid data.');
     }
 
     const tag = await updateTrackingTagComment(req.params.tagId as string, getActor(req), result.data.comment);
@@ -60,17 +63,19 @@ export async function deleteTag(req: Request, res: Response) {
 }
 
 export async function getFunnels(req: Request, res: Response) {
+    assertValidObjectId(req.params.applicationId, 'applicationId');
     const applicationId = req.params.applicationId as string;
     const funnels = await listConversionFunnels(applicationId, getActor(req));
     res.json({ funnels });
 }
 
 export async function postFunnel(req: Request, res: Response) {
+    assertValidObjectId(req.params.applicationId, 'applicationId');
     const applicationId = req.params.applicationId as string;
     const result = createConversionFunnelSchema.safeParse(req.body);
 
     if (!result.success) {
-        throw new AppError(400, 'invalid_input', result.error.issues[0]?.message ?? 'Invalid data.');
+        throw new AppError(400, 'invalid_input', 'Invalid data.');
     }
 
     const funnel = await createConversionFunnel(
@@ -86,7 +91,7 @@ export async function patchFunnelComment(req: Request, res: Response) {
     const result = updateConversionFunnelCommentSchema.safeParse(req.body);
 
     if (!result.success) {
-        throw new AppError(400, 'invalid_input', result.error.issues[0]?.message ?? 'Invalid data.');
+        throw new AppError(400, 'invalid_input', 'Invalid data.');
     }
 
     const funnel = await updateConversionFunnelComment(
