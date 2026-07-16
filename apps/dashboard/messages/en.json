@@ -303,7 +303,12 @@
     "appSecretLabel": "APP_SECRET",
     "originPlaceholder": "https://mysite.com",
     "accountStatus_pending": "Pending",
-    "accountStatus_suspended": "Suspended"
+    "accountStatus_suspended": "Suspended",
+    "passwordResetTitle": "Password",
+    "passwordResetHint": "Receive an email with a secure link to set a new password for this account.",
+    "passwordResetAction": "Receive a reset link",
+    "passwordResetSent": "If this account exists, a reset email has just been sent.",
+    "passwordResetError": "Unable to send the reset email right now."
   },
   "admin": {
     "companiesTitle": "Companies",
