@@ -305,13 +305,12 @@
     "accountStatus_pending": "En attente",
     "accountStatus_suspended": "Suspendu",
     "deleteApp": "Supprimer l'application",
-    "deleteAppConfirm": "Confirmez-vous la suppression de \"{name}\" ? Cette action est irréversible."
+    "deleteAppConfirm": "Confirmez-vous la suppression de \"{name}\" ? Cette action est irréversible.",
     "passwordResetTitle": "Mot de passe",
     "passwordResetHint": "Recevez un email contenant un lien sécurisé pour définir un nouveau mot de passe sur ce compte.",
     "passwordResetAction": "Recevoir un lien de réinitialisation",
     "passwordResetSent": "Si ce compte existe, un email de réinitialisation vient d'être envoyé.",
     "passwordResetError": "Impossible d'envoyer le mail de réinitialisation pour le moment."
-    
   },
   "admin": {
     "companiesTitle": "Entreprises",
