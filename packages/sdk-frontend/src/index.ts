@@ -10,6 +10,12 @@ let queue: EventQueue | null = null;
 export const Analytics = {
   init(config: SdkConfig): void {
     const fullConfig = { flushIntervalMs: 5000, batchSize: 20, ...config };
+    console.info('[sdk] init', {
+      appId: fullConfig.appId,
+      endpoint: fullConfig.endpoint,
+      flushIntervalMs: fullConfig.flushIntervalMs,
+      batchSize: fullConfig.batchSize,
+    });
     queue = new EventQueue(fullConfig);
     startAutoCapture((type, payload) => this.track(type, payload));
     queue.start();
@@ -31,6 +37,15 @@ export const Analytics = {
       visitorId: getVisitorId(),
       sessionId: getSessionId(),
     };
+
+    console.info('[sdk] track', {
+      type: event.type,
+      url: event.url,
+      occurredAt: event.occurredAt,
+      payload: event.payload,
+      visitorId: event.visitorId,
+      sessionId: event.sessionId,
+    });
 
     queue.add(event);
   },
