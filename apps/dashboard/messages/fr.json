@@ -497,5 +497,21 @@
     "deleteAlert": "Supprimer l'alerte",
     "enableAlert": "Activer",
     "disableAlert": "Désactiver"
+  },
+  "shareLink": {
+    "title": "Dashboard partageable",
+    "noShareHint": "Générez un lien public pour partager ce dashboard en lecture seule.",
+    "activeHint": "Ce lien est actif — toute personne avec l'URL peut voir le dashboard.",
+    "generate": "Générer le lien",
+    "generating": "Génération…",
+    "revoke": "Révoquer",
+    "revoking": "Révocation…",
+    "copy": "Copier",
+    "copied": "Copié ✓",
+    "open": "Ouvrir",
+    "expiresOn": "Expire le",
+    "ttlPlaceholder": "ex: 30",
+    "ttlUnit": "jours (optionnel)",
+    "ttlHint": "Sans durée, le lien est permanent jusqu'à révocation."
   }
 }

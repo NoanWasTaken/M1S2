@@ -497,5 +497,21 @@
     "deleteAlert": "Delete alert",
     "enableAlert": "Enable",
     "disableAlert": "Disable"
+  },
+  "shareLink": {
+    "title": "Shareable dashboard",
+    "noShareHint": "Generate a public link to share this dashboard in read-only mode.",
+    "activeHint": "This link is active — anyone with the URL can view the dashboard.",
+    "generate": "Generate link",
+    "generating": "Generating…",
+    "revoke": "Revoke",
+    "revoking": "Revoking…",
+    "copy": "Copy",
+    "copied": "Copied ✓",
+    "open": "Open",
+    "expiresOn": "Expires on",
+    "ttlPlaceholder": "e.g. 30",
+    "ttlUnit": "days (optional)",
+    "ttlHint": "Without a duration, the link is permanent until revoked."
   }
 }
