@@ -34,7 +34,10 @@ async function start() {
 
   const app = express();
   app.set('trust proxy', 1);
-  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    strictTransportSecurity: { maxAge: 31536000, includeSubDomains: true },
+  }));
   app.use(express.json());
   app.use(cookieParser());
 

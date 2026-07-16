@@ -304,11 +304,14 @@
     "originPlaceholder": "https://monsite.fr",
     "accountStatus_pending": "En attente",
     "accountStatus_suspended": "Suspendu",
+    "deleteApp": "Supprimer l'application",
+    "deleteAppConfirm": "Confirmez-vous la suppression de \"{name}\" ? Cette action est irréversible."
     "passwordResetTitle": "Mot de passe",
     "passwordResetHint": "Recevez un email contenant un lien sécurisé pour définir un nouveau mot de passe sur ce compte.",
     "passwordResetAction": "Recevoir un lien de réinitialisation",
     "passwordResetSent": "Si ce compte existe, un email de réinitialisation vient d'être envoyé.",
     "passwordResetError": "Impossible d'envoyer le mail de réinitialisation pour le moment."
+    
   },
   "admin": {
     "companiesTitle": "Entreprises",
@@ -339,6 +342,14 @@
     "userStatus_active": "Actif",
     "userStatus_pending": "En attente",
     "userStatus_suspended": "Suspendu",
+    "delete": "Supprimer",
+    "suspend": "Suspendre",
+    "accept": "Accepter",
+    "reactivate": "Réactiver",
+    "deleteUserConfirm": "Confirmez-vous la suspension de cet utilisateur ? Il sera retiré de son entreprise.",
+    "permanentDelete": "Supprimer définitivement",
+    "permanentDeleteUserConfirm": "Confirmez-vous la suppression définitive de cet utilisateur ? Cette action est irréversible.",
+    "deleteCompanyConfirm": "Confirmez-vous la suppression de cette entreprise ? Toutes les applications seront supprimées et les utilisateurs suspendus.",
     "impersonate": "Se connecter en tant que",
     "impersonatingAs": "Vous consultez la plateforme en tant que {email}",
     "stopImpersonating": "Quitter",

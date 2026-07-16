@@ -84,6 +84,12 @@ export async function deleteApplicationSecret(applicationId: string, creator: Cr
     return { deleted: true };
 }
 
+export async function deleteApplication(applicationId: string, creator: Creator) {
+    const application = await getOwnedApplication(applicationId, creator);
+    await application.deleteOne();
+    return { deleted: true };
+}
+
 export async function updateAllowedOrigins(
     applicationId: string,
     creator: Creator,
