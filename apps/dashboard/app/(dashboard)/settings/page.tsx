@@ -273,6 +273,18 @@ function ApplicationRow({ app, onChanged, readOnly }: { app: App; onChanged: () 
     const [origins, setOrigins] = useState<string[]>(app.allowedOrigins ?? []);
     const [newOrigin, setNewOrigin] = useState('');
     const [savedOrigins, setSavedOrigins] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+
+    async function handleDelete() {
+        if (!confirm(t('deleteAppConfirm', { name: app.name }))) return;
+        setDeleting(true);
+        try {
+            await api.delete(`/api/v1/applications/${app._id}`);
+            onChanged();
+        } finally {
+            setDeleting(false);
+        }
+    }
 
     async function generateSecret() {
         setBusy(true);
@@ -312,7 +324,19 @@ function ApplicationRow({ app, onChanged, readOnly }: { app: App; onChanged: () 
         <div className="flex flex-col gap-4 rounded-lg border border-border-subtle p-4">
             <div className="flex items-center justify-between">
                 <span className="font-medium text-text-primary">{app.name}</span>
-                <span className="text-xs text-text-tertiary">{t('createdOn')} {formatDate(app.createdAt)}</span>
+                <div className="flex items-center gap-2">
+                    {!readOnly && (
+                        <button
+                            type="button"
+                            disabled={deleting}
+                            onClick={handleDelete}
+                            className="text-xs text-danger hover:underline disabled:opacity-50"
+                        >
+                            {t('deleteApp')}
+                        </button>
+                    )}
+                    <span className="text-xs text-text-tertiary">{t('createdOn')} {formatDate(app.createdAt)}</span>
+                </div>
             </div>
 
             <div className="flex flex-col gap-1">

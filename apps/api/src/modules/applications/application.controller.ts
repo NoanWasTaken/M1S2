@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { createApplicationSchema } from './application.schema.js';
-import { createApplication, listApplications } from './application.service.js';
+import { createApplication, listApplications, deleteApplication } from './application.service.js';
 import { AppError } from '../../utils/app-error.js';
 import { generateApplicationSecret, deleteApplicationSecret } from './application.service.js';
 import { updateOriginsSchema } from './application.schema.js';
@@ -44,6 +44,12 @@ export async function postApplicationSecret(req: Request, res: Response) {
 export async function deleteApplicationSecretController(req: Request, res: Response) {
     const creator = { userId: req.user!.sub, role: req.user!.role, companyId: req.user!.companyId };
     const result = await deleteApplicationSecret(req.params.id as string, creator);
+    res.json(result);
+}
+
+export async function deleteApplicationController(req: Request, res: Response) {
+    const creator = { userId: req.user!.sub, role: req.user!.role, companyId: req.user!.companyId };
+    const result = await deleteApplication(req.params.id as string, creator);
     res.json(result);
 }
 

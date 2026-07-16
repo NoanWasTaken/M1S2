@@ -80,6 +80,73 @@ export async function rejectCompany(companyId: string) {
     return company;
 }
 
+export async function activateUser(userId: string) {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+        throw new AppError(404, 'user_not_found', 'User not found.');
+    }
+    if (user.role === 'admin') {
+        throw new AppError(403, 'cannot_activate_admin', 'Cannot activate an admin user.');
+    }
+    if (user.status === 'active') {
+        return { activated: true };
+    }
+    user.status = 'active';
+    await user.save();
+    return { activated: true };
+}
+
+export async function deleteUser(userId: string) {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+        throw new AppError(404, 'user_not_found', 'User not found.');
+    }
+    if (user.role === 'admin') {
+        throw new AppError(403, 'cannot_delete_admin', 'Cannot delete an admin user.');
+    }
+    user.companyId = null;
+    user.teamRole = null;
+    user.status = 'suspended';
+    await user.save();
+    return { deleted: true };
+}
+
+export async function permanentlyDeleteUser(userId: string) {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+        throw new AppError(404, 'user_not_found', 'User not found.');
+    }
+    if (user.role === 'admin') {
+        throw new AppError(403, 'cannot_delete_admin', 'Cannot delete an admin user.');
+    }
+    if (user.status !== 'suspended') {
+        throw new AppError(400, 'user_not_suspended', 'User must be suspended first before permanent deletion.');
+    }
+    await user.deleteOne();
+    return { deleted: true };
+}
+
+export async function deleteCompany(companyId: string) {
+    const company = await CompanyModel.findById(companyId);
+    if (!company) {
+        throw new AppError(404, 'company_not_found', 'Company not found.');
+    }
+
+    await Promise.all([
+        ApplicationModel.deleteMany({ companyId: company._id }),
+        UserModel.updateMany(
+            { companyId: company._id },
+            { companyId: null, teamRole: null, status: 'suspended' },
+        ),
+    ]);
+
+    await company.deleteOne();
+
+    pushToAdmins('company:pending-count', { pending: await countPendingCompanies() });
+
+    return { deleted: true };
+}
+
 export async function impersonateWebmaster(webmasterId: string, adminId: string) {
     const webmaster = await UserModel.findById(webmasterId);
     if (!webmaster || webmaster.role !== 'webmaster') {

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../../middlewares/authenticate.js';
 import { authorize } from '../../middlewares/authorize.js';
 import { denyMembers } from '../../middlewares/authorize-team.js';
-import { postApplication, getApplications, postApplicationSecret, deleteApplicationSecretController, putAllowedOrigins } from './application.controller.js';
+import { postApplication, getApplications, postApplicationSecret, deleteApplicationSecretController, deleteApplicationController, putAllowedOrigins } from './application.controller.js';
 
 const router = Router();
 
@@ -16,5 +16,6 @@ router.post('/:id/secret', denyMembers, postApplicationSecret);
 router.delete('/:id/secret', denyMembers, deleteApplicationSecretController);
 
 router.put('/:id/origins', denyMembers, putAllowedOrigins);
+router.delete('/:id', denyMembers, deleteApplicationController);
 
 export default router;

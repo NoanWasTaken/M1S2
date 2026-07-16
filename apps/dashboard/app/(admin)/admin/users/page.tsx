@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/providers/auth-provider';
-import { fetchUsers, impersonate, type AdminUser } from '@/lib/admin-api';
+import { fetchUsers, impersonate, deleteUser, permanentlyDeleteUser, activateUser, type AdminUser } from '@/lib/admin-api';
 import { Card } from '@/components/ui/card';
 
 function roleLabel(u: AdminUser, t: (k: string) => string): string {
@@ -35,6 +35,38 @@ export default function AdminUsersPage() {
     useEffect(() => {
         load();
     }, [load]);
+
+    const handleActivate = async (u: AdminUser) => {
+        setBusyId(u._id);
+        try {
+            await activateUser(u._id);
+            await load();
+        } finally {
+            setBusyId(null);
+        }
+    };
+
+    const handleDelete = async (u: AdminUser) => {
+        if (!confirm(t('deleteUserConfirm'))) return;
+        setBusyId(u._id);
+        try {
+            await deleteUser(u._id);
+            await load();
+        } finally {
+            setBusyId(null);
+        }
+    };
+
+    const handlePermanentDelete = async (u: AdminUser) => {
+        if (!confirm(t('permanentDeleteUserConfirm'))) return;
+        setBusyId(u._id);
+        try {
+            await permanentlyDeleteUser(u._id);
+            await load();
+        } finally {
+            setBusyId(null);
+        }
+    };
 
     const handleImpersonate = async (u: AdminUser) => {
         setBusyId(u._id);
@@ -97,16 +129,58 @@ export default function AdminUsersPage() {
                                         </span>
                                     </td>
                                     <td className="py-3 text-right">
-                                        {u.role === 'webmaster' && (
-                                            <button
-                                                type="button"
-                                                disabled={busyId === u._id}
-                                                onClick={() => handleImpersonate(u)}
-                                                className="rounded-md border border-border-subtle px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:border-accent hover:text-accent disabled:opacity-50"
-                                            >
-                                                {t('impersonate')}
-                                            </button>
-                                        )}
+                                        <div className="flex items-center justify-end gap-2">
+                                            {u.status === 'pending' && (
+                                                <button
+                                                    type="button"
+                                                    disabled={busyId === u._id}
+                                                    onClick={() => handleActivate(u)}
+                                                    className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-[#05070d] transition-opacity hover:opacity-90 disabled:opacity-50"
+                                                >
+                                                    {t('accept')}
+                                                </button>
+                                            )}
+                                            {u.status === 'suspended' && (
+                                                <>
+                                                    <button
+                                                        type="button"
+                                                        disabled={busyId === u._id}
+                                                        onClick={() => handleActivate(u)}
+                                                        className="rounded-md border border-success/40 px-3 py-1.5 text-xs font-medium text-success transition-colors hover:bg-success/10 disabled:opacity-50"
+                                                    >
+                                                        {t('reactivate')}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        disabled={busyId === u._id}
+                                                        onClick={() => handlePermanentDelete(u)}
+                                                        className="rounded-md border border-danger/40 px-3 py-1.5 text-xs font-medium text-danger transition-colors hover:bg-danger/10 disabled:opacity-50"
+                                                    >
+                                                        {t('permanentDelete')}
+                                                    </button>
+                                                </>
+                                            )}
+                                            {u.status === 'active' && (
+                                                <button
+                                                    type="button"
+                                                    disabled={busyId === u._id}
+                                                    onClick={() => handleDelete(u)}
+                                                    className="rounded-md border border-danger/40 px-3 py-1.5 text-xs font-medium text-danger transition-colors hover:bg-danger/10 disabled:opacity-50"
+                                                >
+                                                    {t('suspend')}
+                                                </button>
+                                            )}
+                                            {u.role === 'webmaster' && (
+                                                <button
+                                                    type="button"
+                                                    disabled={busyId === u._id}
+                                                    onClick={() => handleImpersonate(u)}
+                                                    className="rounded-md border border-border-subtle px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:border-accent hover:text-accent disabled:opacity-50"
+                                                >
+                                                    {t('impersonate')}
+                                                </button>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

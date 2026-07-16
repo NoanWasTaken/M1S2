@@ -8,6 +8,10 @@ import {
     countPendingCompanies,
     validateCompany,
     rejectCompany,
+    activateUser,
+    deleteUser,
+    permanentlyDeleteUser,
+    deleteCompany,
     impersonateWebmaster,
     getCompanyDetail,
 } from './admin.service.js';
@@ -57,6 +61,22 @@ export async function postValidateCompany(req: Request, res: Response) {
 export async function postRejectCompany(req: Request, res: Response) {
     const company = await rejectCompany(req.params.id as string);
     res.json({ company });
+}
+
+export async function activateUserController(req: Request, res: Response) {
+    res.json(await activateUser(req.params.id as string));
+}
+
+export async function deleteUserController(req: Request, res: Response) {
+    res.json(await deleteUser(req.params.id as string));
+}
+
+export async function permanentlyDeleteUserController(req: Request, res: Response) {
+    res.json(await permanentlyDeleteUser(req.params.id as string));
+}
+
+export async function deleteCompanyController(req: Request, res: Response) {
+    res.json(await deleteCompany(req.params.id as string));
 }
 
 export async function postImpersonate(req: Request, res: Response) {
