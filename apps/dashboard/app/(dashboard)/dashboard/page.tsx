@@ -59,7 +59,9 @@ function StaticDashboard({
   appId: string;
 }) {
   const rows = useMemo(() => {
-    const sorted = [...widgets].sort((a, b) => a.position.y - b.position.y || a.position.x - b.position.x);
+    const sorted = [...widgets].sort(
+      (a, b) => a.position.y - b.position.y || a.position.x - b.position.x,
+    );
     const merged: { y: number; left: WidgetDef[]; right: WidgetDef[] }[] = [];
 
     for (const w of sorted) {
@@ -107,7 +109,12 @@ function StaticDashboard({
             {row.right.length > 0 && (
               <div className="flex flex-col gap-4 lg:col-span-1">
                 {row.right.map((w) => (
-                  <StaticWidget key={w.widgetId} widget={w} dataSources={dataSources} appId={appId} />
+                  <StaticWidget
+                    key={w.widgetId}
+                    widget={w}
+                    dataSources={dataSources}
+                    appId={appId}
+                  />
                 ))}
               </div>
             )}
@@ -122,7 +129,15 @@ function isCustomWidget(w: WidgetDef): boolean {
   return !!w.config?.metric;
 }
 
-function StaticWidget({ widget, dataSources, appId }: { widget: WidgetDef; dataSources: Record<string, unknown>; appId: string }) {
+function StaticWidget({
+  widget,
+  dataSources,
+  appId,
+}: {
+  widget: WidgetDef;
+  dataSources: Record<string, unknown>;
+  appId: string;
+}) {
   const t = useTranslations('dashboard');
   if (isCustomWidget(widget)) {
     return (
@@ -132,14 +147,20 @@ function StaticWidget({ widget, dataSources, appId }: { widget: WidgetDef; dataS
     );
   }
 
-  const data = dataSources[widget.type] as DashboardData[keyof DashboardData] ?? null;
+  const data = (dataSources[widget.type] as DashboardData[keyof DashboardData]) ?? null;
 
   switch (widget.type) {
     case 'kpi':
       return (
         <KpiGrid>
           {((data ?? []) as DashboardData['kpi']).map((kpi) => (
-            <KpiCard key={kpi.id} id={kpi.id} value={kpi.value} delta={kpi.delta} ratio={kpi.ratio} />
+            <KpiCard
+              key={kpi.id}
+              id={kpi.id}
+              value={kpi.value}
+              delta={kpi.delta}
+              ratio={kpi.ratio}
+            />
           ))}
         </KpiGrid>
       );
@@ -168,12 +189,42 @@ function fillMissingDefaults(widgets: WidgetDef[]): WidgetDef[] {
 
 const defaultWidgets: WidgetDef[] = [
   { widgetId: 'kpi', type: 'kpi', title: 'KPI', position: { x: 0, y: 0, w: 12, h: 2 } },
-  { widgetId: 'area-chart', type: 'area-chart', title: 'Trafic aujourd\'hui', position: { x: 0, y: 2, w: 8, h: 3 } },
-  { widgetId: 'live-list', type: 'live-list', title: 'Pages actives', position: { x: 8, y: 2, w: 4, h: 3 } },
-  { widgetId: 'globe', type: 'globe', title: 'Visiteurs dans le monde', position: { x: 0, y: 1, w: 12, h: 3 } },
-  { widgetId: 'data-table', type: 'data-table', title: 'Top pages', position: { x: 0, y: 5, w: 8, h: 3 } },
-  { widgetId: 'donut-chart', type: 'donut-chart', title: 'Sources de trafic', position: { x: 8, y: 5, w: 4, h: 2 } },
-  { widgetId: 'progress-list', type: 'progress-list', title: 'Appareils', position: { x: 8, y: 7, w: 4, h: 1 } },
+  {
+    widgetId: 'area-chart',
+    type: 'area-chart',
+    title: "Trafic aujourd'hui",
+    position: { x: 0, y: 2, w: 8, h: 3 },
+  },
+  {
+    widgetId: 'live-list',
+    type: 'live-list',
+    title: 'Pages actives',
+    position: { x: 8, y: 2, w: 4, h: 3 },
+  },
+  {
+    widgetId: 'globe',
+    type: 'globe',
+    title: 'Visiteurs dans le monde',
+    position: { x: 0, y: 1, w: 12, h: 3 },
+  },
+  {
+    widgetId: 'data-table',
+    type: 'data-table',
+    title: 'Top pages',
+    position: { x: 0, y: 5, w: 8, h: 3 },
+  },
+  {
+    widgetId: 'donut-chart',
+    type: 'donut-chart',
+    title: 'Sources de trafic',
+    position: { x: 8, y: 5, w: 4, h: 2 },
+  },
+  {
+    widgetId: 'progress-list',
+    type: 'progress-list',
+    title: 'Appareils',
+    position: { x: 8, y: 7, w: 4, h: 1 },
+  },
 ];
 
 export default function OverviewPage() {
@@ -218,7 +269,9 @@ export default function OverviewPage() {
 
   const { activeVisitors, peakAlert } = useDashboardSocket({
     onUpdate: () => {
-      fetchDashboardData(period, selectedAppId ?? undefined).then(setData).catch(() => { });
+      fetchDashboardData(period, selectedAppId ?? undefined)
+        .then(setData)
+        .catch(() => {});
     },
   });
 
@@ -229,37 +282,54 @@ export default function OverviewPage() {
     });
   }, []);
 
-  const handleLayoutChange = useCallback((updated: WidgetDef[]) => {
-    setWidgets(updated);
-    saveWidgets(updated);
-  }, [saveWidgets]);
+  const handleLayoutChange = useCallback(
+    (updated: WidgetDef[]) => {
+      setWidgets(updated);
+      saveWidgets(updated);
+    },
+    [saveWidgets],
+  );
 
-  const handleAddWidget = useCallback((form: { type: string; title: string; metric: string; mode: string; step: string; pageUrl: string; filters: { field: string; value: string }[] }) => {
-    const maxY = widgets.reduce((max, w) => Math.max(max, w.position.y + w.position.h), 0);
-    const newWidget: WidgetDef = {
-      widgetId: crypto.randomUUID(),
-      type: form.type === 'timeseries' ? 'area-chart' : form.type,
-      title: form.title || form.type,
-      position: { x: 0, y: maxY, w: 6, h: 4 },
-      config: {
-        metric: form.metric,
-        mode: form.mode,
-        step: form.step,
-        pageUrl: form.pageUrl || undefined,
-        filters: form.filters.filter((f) => f.field),
-      },
-    };
-    const updated = [...widgets, newWidget];
-    setWidgets(updated);
-    saveWidgets(updated);
-    setBuilderOpen(false);
-  }, [widgets, saveWidgets]);
+  const handleAddWidget = useCallback(
+    (form: {
+      type: string;
+      title: string;
+      metric: string;
+      mode: string;
+      step: string;
+      pageUrl: string;
+      filters: { field: string; value: string }[];
+    }) => {
+      const maxY = widgets.reduce((max, w) => Math.max(max, w.position.y + w.position.h), 0);
+      const newWidget: WidgetDef = {
+        widgetId: crypto.randomUUID(),
+        type: form.type === 'timeseries' ? 'area-chart' : form.type,
+        title: form.title || form.type,
+        position: { x: 0, y: maxY, w: 6, h: 4 },
+        config: {
+          metric: form.metric,
+          mode: form.mode,
+          step: form.step,
+          pageUrl: form.pageUrl || undefined,
+          filters: form.filters.filter((f) => f.field),
+        },
+      };
+      const updated = [...widgets, newWidget];
+      setWidgets(updated);
+      saveWidgets(updated);
+      setBuilderOpen(false);
+    },
+    [widgets, saveWidgets],
+  );
 
-  const handleDeleteWidget = useCallback((widgetId: string) => {
-    const updated = widgets.filter((w) => w.widgetId !== widgetId);
-    setWidgets(updated);
-    saveWidgets(updated);
-  }, [widgets, saveWidgets]);
+  const handleDeleteWidget = useCallback(
+    (widgetId: string) => {
+      const updated = widgets.filter((w) => w.widgetId !== widgetId);
+      setWidgets(updated);
+      saveWidgets(updated);
+    },
+    [widgets, saveWidgets],
+  );
 
   return (
     <>
@@ -292,6 +362,7 @@ export default function OverviewPage() {
         open={builderOpen}
         onClose={() => setBuilderOpen(false)}
         onSave={handleAddWidget}
+        pageUrls={data.topPages.map((page) => page.path)}
       />
     </>
   );
