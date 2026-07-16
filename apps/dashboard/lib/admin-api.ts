@@ -57,12 +57,26 @@ export async function activateUser(userId: string) {
     await api.post(`/api/v1/admin/users/${userId}/activate`);
 }
 
+export async function rejectUser(userId: string) {
+    await api.post(`/api/v1/admin/users/${userId}/reject`);
+}
+
 export async function permanentlyDeleteUser(userId: string) {
     await api.delete(`/api/v1/admin/users/${userId}/permanent`);
 }
 
 export async function deleteCompany(companyId: string) {
     await api.delete(`/api/v1/admin/companies/${companyId}`);
+}
+
+export async function viewCompanyKbis(companyId: string) {
+    const res = await api.get(`/api/v1/admin/companies/${companyId}/kbis`, {
+        responseType: 'blob',
+    });
+    const blob = new Blob([res.data], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank', 'noopener,noreferrer');
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 export async function impersonate(userId: string) {

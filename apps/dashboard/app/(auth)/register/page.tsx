@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useForm } from 'react-hook-form';
+import { useController, useForm } from 'react-hook-form';
 import { zodResolver } from '@/lib/zod-resolver';
 import { useTranslations } from 'next-intl';
 import { registerSchema, type RegisterInput } from '@m1s2/shared';
@@ -12,6 +12,132 @@ import { GuestOnly } from '@/components/auth/guest-only';
 import { Card } from '@/components/ui/card';
 import { FormField } from '@/components/ui/form-field';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/api-client';
+
+const MAX_KBIS_BYTES = 10 * 1024 * 1024;
+
+function KbisFileField({
+  control,
+}: {
+  control: ReturnType<typeof useForm<RegisterInput>>['control'];
+}) {
+  const t = useTranslations('auth.register');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  const { field, fieldState } = useController({
+    control,
+    name: 'company.kbisFileRef',
+  });
+
+  const uploadFile = async (file: File) => {
+    setLocalError(null);
+
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      setLocalError(t('kbisPdfOnly'));
+      return;
+    }
+    if (file.size > MAX_KBIS_BYTES) {
+      setLocalError(t('kbisTooLarge'));
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const body = new FormData();
+      body.append('kbis', file);
+      const res = await api.post<{ kbisFileRef: string }>('/api/v1/auth/kbis', body, {
+        headers: { 'Content-Type': undefined },
+      });
+      field.onChange(res.data.kbisFileRef);
+      setFileName(file.name);
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as { response: { data: { message?: string } } }).response?.data?.message
+          : null;
+      setLocalError(message || t('kbisUploadError'));
+      field.onChange('');
+      setFileName(null);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const onPick = (files: FileList | null) => {
+    const file = files?.[0];
+    if (file) void uploadFile(file);
+  };
+
+  const error = localError || fieldState.error?.message;
+
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-sm font-medium text-text-primary">{t('kbis')}</label>
+      <div
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
+        onClick={() => inputRef.current?.click()}
+        onDragEnter={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          onPick(e.dataTransfer.files);
+        }}
+        className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-6 text-center transition-colors ${
+          dragOver
+            ? 'border-accent bg-accent/10'
+            : error
+              ? 'border-danger/50 bg-danger/5'
+              : 'border-border-subtle bg-bg-card hover:border-accent/60'
+        }`}
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          accept="application/pdf,.pdf"
+          className="hidden"
+          onChange={(e) => onPick(e.target.files)}
+        />
+        {uploading ? (
+          <p className="text-sm text-text-secondary">{t('kbisUploading')}</p>
+        ) : fileName && field.value ? (
+          <>
+            <p className="text-sm font-medium text-text-primary">{fileName}</p>
+            <p className="text-xs text-success">{t('kbisReady')}</p>
+            <p className="text-xs text-text-tertiary">{t('kbisReplace')}</p>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-text-primary">{t('kbisDrop')}</p>
+            <p className="text-xs text-text-tertiary">{t('kbisHint')}</p>
+          </>
+        )}
+      </div>
+      {error && <p className="text-xs text-danger">{error}</p>}
+    </div>
+  );
+}
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -94,12 +220,7 @@ export default function RegisterPage() {
               placeholder={t('siteUrlPlaceholder')}
             />
 
-            <FormField
-              control={form.control}
-              name="company.kbisFileRef"
-              label={t('kbis')}
-              placeholder={t('kbisPlaceholder')}
-            />
+            <KbisFileField control={form.control} />
 
             <FormField
               control={form.control}

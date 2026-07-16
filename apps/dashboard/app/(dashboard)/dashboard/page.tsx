@@ -16,6 +16,7 @@ import { api } from '@/lib/api-client';
 import { useDashboardStream as useDashboardSocket } from '@/lib/dashboard-stream';
 import { useApplications } from '@/providers/application-provider';
 import { AudiencePeakBanner } from '@/components/dashboard/audience-peak-banner';
+import { GlobeWidget } from '@/components/dashboard/globe-widget';
 
 const COLUMNS = 12;
 
@@ -140,6 +141,8 @@ function StaticWidget({
       return <DonutChart data={data as DashboardData['sources']} />;
     case 'progress-list':
       return <ProgressList data={data as DashboardData['devices']} />;
+    case 'globe':
+      return <GlobeWidget />;
     default:
       return null;
   }
@@ -155,6 +158,7 @@ const defaultWidgets: WidgetDef[] = [
   { widgetId: 'kpi', type: 'kpi', title: 'KPI', position: { x: 0, y: 0, w: 12, h: 2 } },
   { widgetId: 'area-chart', type: 'area-chart', title: 'Trafic aujourd\'hui', position: { x: 0, y: 2, w: 8, h: 3 } },
   { widgetId: 'live-list', type: 'live-list', title: 'Pages actives', position: { x: 8, y: 2, w: 4, h: 3 } },
+  { widgetId: 'globe', type: 'globe', title: 'Visiteurs dans le monde', position: { x: 0, y: 1, w: 12, h: 3 } },
   { widgetId: 'data-table', type: 'data-table', title: 'Top pages', position: { x: 0, y: 5, w: 8, h: 3 } },
   { widgetId: 'donut-chart', type: 'donut-chart', title: 'Sources de trafic', position: { x: 8, y: 5, w: 4, h: 2 } },
   { widgetId: 'progress-list', type: 'progress-list', title: 'Appareils', position: { x: 8, y: 7, w: 4, h: 1 } },

@@ -8,6 +8,7 @@ import {
     validateCompany,
     rejectCompany,
     deleteCompany,
+    viewCompanyKbis,
     type AdminCompany,
     type ValidationStatus,
 } from '@/lib/admin-api';
@@ -172,7 +173,13 @@ export default function AdminCompaniesPage() {
                                 </div>
                                 <div className="flex flex-col gap-0.5">
                                     <span className="text-[10px] uppercase tracking-wider text-text-secondary">{t('kbis')}</span>
-                                    <span className="font-mono text-xs text-text-primary">{c.kbisFileRef}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => viewCompanyKbis(c._id)}
+                                        className="w-fit text-left text-xs font-medium text-accent hover:underline"
+                                    >
+                                        {t('viewKbis')}
+                                    </button>
                                 </div>
                                 <div className="flex flex-col gap-0.5">
                                     <span className="text-[10px] uppercase tracking-wider text-text-secondary">{t('requestedOn')}</span>
