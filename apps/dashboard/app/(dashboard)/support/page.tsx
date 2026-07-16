@@ -73,9 +73,25 @@ export default function SupportPage() {
   }, [load]);
 
   useEffect(() => {
+    const storedPending = typeof window !== 'undefined'
+      ? (() => {
+        try {
+          const raw = window.sessionStorage.getItem('support:pending-call');
+          return raw ? JSON.parse(raw) as SupportCallSignalEvent : null;
+        } catch {
+          return null;
+        }
+      })()
+      : null;
+
+    const pending = activeId && storedPending?.conversationId === activeId
+      ? storedPending
+      : activeId
+        ? pendingCalls[activeId] ?? null
+        : null;
+
     startTransition(() => {
       if (activeId) {
-        const pending = pendingCalls[activeId];
         setIncomingCallSignal(pending ?? null);
         setTypingUserId(null);
         setUnreadCounts((prev) => ({ ...prev, [activeId]: 0 }));
@@ -83,6 +99,10 @@ export default function SupportPage() {
         setMessages([]);
       }
     });
+
+    if (activeId && storedPending?.conversationId === activeId) {
+      window.sessionStorage.removeItem('support:pending-call');
+    }
 
     if (activeId) {
       fetchMessages(activeId)
@@ -254,34 +274,7 @@ export default function SupportPage() {
 
   return (
     <>
-      <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
-        {pendingCall && pendingCall.conversationId !== activeId && (
-          <div className="border-b border-accent/30 bg-accent/10 px-4 py-3">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-text-primary">{t('callIncomingTitle')}</p>
-                <p className="text-xs text-text-secondary">{t('callIncomingText')}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleAnswerPendingCall}
-                  className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-[#05070d]"
-                >
-                  {t('callAnswer')}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDeclinePendingCall}
-                  className="rounded-md border border-border-subtle px-3 py-1.5 text-xs font-medium text-text-secondary"
-                >
-                  {t('callDecline')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
+      <div className="flex h-[calc(100dvh-3.5rem)] min-h-0 flex-col overflow-hidden lg:h-[calc(100vh-4rem)] lg:flex-row">
         <div className={`${activeId ? 'hidden lg:flex' : 'flex'} w-full shrink-0 flex-col lg:w-80`}>
           <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
             <div className="flex items-center gap-2">

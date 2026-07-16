@@ -2,6 +2,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { ApplicationProvider } from '@/providers/application-provider';
 import { Sidebar } from '@/components/dashboard/sidebar';
 import { PageEnter } from '@/components/ui/page-enter';
+import { GlobalIncomingCallLayer } from '@/components/support/global-incoming-call-layer';
 import { getTranslations } from 'next-intl/server';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -20,6 +21,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               {t('adminModeBanner')}
             </div>
             <main className="flex min-h-0 flex-1 flex-col overflow-auto pt-14 lg:pt-0">
+              <GlobalIncomingCallLayer />
               <PageEnter>{children}</PageEnter>
             </main>
           </div>

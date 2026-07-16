@@ -50,10 +50,29 @@ export default function AdminSupportPage() {
   }, [load]);
 
   useEffect(() => {
+    const storedPending = typeof window !== 'undefined'
+      ? (() => {
+        try {
+          const raw = window.sessionStorage.getItem('support:pending-call');
+          return raw ? JSON.parse(raw) as SupportCallSignalEvent : null;
+        } catch {
+          return null;
+        }
+      })()
+      : null;
+
+    const pending = activeId && storedPending?.conversationId === activeId
+      ? storedPending
+      : activeId
+        ? pendingCalls[activeId] ?? null
+        : null;
+
     if (activeId) {
-      const pending = pendingCalls[activeId];
       setIncomingCallSignal(pending ?? null);
       setTypingUserId(null);
+      if (activeId && storedPending?.conversationId === activeId) {
+        window.sessionStorage.removeItem('support:pending-call');
+      }
       fetchMessages(activeId)
         .then((data) => setMessages(data.messages))
         .catch(() => { });

@@ -3,7 +3,7 @@ import { ApplicationProvider } from '@/providers/application-provider';
 import { Sidebar } from '@/components/dashboard/sidebar';
 import { ImpersonationBanner } from '@/components/admin/impersonation-banner';
 import { PageEnter } from '@/components/ui/page-enter';
-
+import { GlobalIncomingCallLayer } from '@/components/support/global-incoming-call-layer';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +13,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Sidebar />
           <main className="flex min-h-0 flex-1 flex-col overflow-auto pt-14 lg:pt-0">
             <ImpersonationBanner />
+            <GlobalIncomingCallLayer />
             <PageEnter>{children}</PageEnter>
           </main>
         </div>
