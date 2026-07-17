@@ -130,15 +130,13 @@ export function SupportNotificationsProvider({ children }: { children: ReactNode
       }));
 
       const id = `${payload.messageId}-${Date.now()}`;
-      setToasts((prev) => [
-        {
-          id,
-          conversationId: payload.conversationId,
-          content: payload.content,
-          senderRole: payload.senderRole,
-        },
-        ...prev,
-      ].slice(0, 3));
+      const toast: ToastItem = {
+        id,
+        conversationId: payload.conversationId,
+        content: payload.content,
+        senderRole: payload.senderRole,
+      };
+      setToasts((prev) => [toast, ...prev].slice(0, 3));
 
       window.setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -157,15 +155,13 @@ export function SupportNotificationsProvider({ children }: { children: ReactNode
       }));
 
       const id = `new-${payload.conversationId}-${Date.now()}`;
-      setToasts((prev) => [
-        {
-          id,
-          conversationId: payload.conversationId,
-          content: payload.subject,
-          senderRole: 'webmaster',
-        },
-        ...prev,
-      ].slice(0, 3));
+      const toast: ToastItem = {
+        id,
+        conversationId: payload.conversationId,
+        content: payload.subject,
+        senderRole: 'webmaster',
+      };
+      setToasts((prev) => [toast, ...prev].slice(0, 3));
 
       window.setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
