@@ -16,6 +16,7 @@ import { WidgetRenderer, renderWidgetBody } from '@/components/dashboard/widget'
 import { fetchDashboardData, mockDashboardData, type DashboardData } from '@/lib/dashboard-api';
 import { api } from '@/lib/api-client';
 import { useDashboardStream as useDashboardSocket } from '@/lib/dashboard-stream';
+import { useGlobeStream } from '@/lib/use-globe-stream';
 import { useApplications } from '@/providers/application-provider';
 import { AudiencePeakBanner } from '@/components/dashboard/audience-peak-banner';
 import { GlobeWidget } from '@/components/dashboard/globe-widget';
@@ -235,6 +236,7 @@ export default function OverviewPage() {
   const [canEditLayout, setCanEditLayout] = useState(false);
   const [period, setPeriod] = useState('24h');
   const [data, setData] = useState<DashboardData>(mockDashboardData);
+  const { totalActive } = useGlobeStream();
 
   useEffect(() => {
     api
@@ -338,7 +340,7 @@ export default function OverviewPage() {
         onToggleEdit={() => setIsEditing((v) => !v)}
         period={period}
         onPeriodChange={setPeriod}
-        activeVisitors={activeVisitors ?? 0}
+        activeVisitors={totalActive || activeVisitors || 0}
       />
 
       {isEditing && canEditLayout ? (

@@ -11,8 +11,10 @@
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
     "@m1s2/shared": "^0.0.0",
+    "@types/heatmap.js": "^2.0.41",
     "axios": "^1.7.9",
     "enhanced-resolve": "^5.21.6",
+    "heatmap.js": "^2.0.5",
     "lightningcss": "^1.32.0",
     "next": "16.2.9",
     "next-intl": "^4.13.1",

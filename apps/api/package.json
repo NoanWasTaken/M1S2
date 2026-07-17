@@ -9,6 +9,7 @@
     "start": "node dist/server.js",
     "test": "vitest run",
     "test:watch": "vitest",
+    "postinstall": "puppeteer browsers install chrome || true",
     "seed:admin": "tsx src/scripts/seed-admin.ts",
     "clear:events": "tsx src/scripts/clear-events.ts",
     "migrate:up": "migrate-mongo up -f migrate-mongo-config.cjs",
