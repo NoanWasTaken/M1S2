@@ -122,6 +122,8 @@ export function startAutoCapture(track: TrackFn): void {
       py,
       pw: document.documentElement.scrollWidth,
       ph: document.documentElement.scrollHeight,
+      vw: window.innerWidth,
+      vh: window.innerHeight,
       ...details,
     });
   });
