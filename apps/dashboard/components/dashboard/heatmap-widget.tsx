@@ -1,7 +1,5 @@
 'use client';
 
-/* eslint-disable @next/next/no-img-element -- pixel-perfect heatmap overlay needs raw img */
-
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api-client';

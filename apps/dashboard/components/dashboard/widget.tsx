@@ -103,33 +103,39 @@ export function renderWidgetBody(
 ) {
   const { type, config } = widget;
 
+  function getHeatmapConfig(c: Record<string, unknown> | undefined): { pageUrl?: string; period?: string } | undefined {
+    if (!c) return undefined;
+    return {
+      pageUrl: typeof c.pageUrl === 'string' ? c.pageUrl : undefined,
+      period: typeof c.period === 'string' ? c.period : undefined,
+    };
+  }
+
   if (isCustomWidget(widget)) {
     switch (type) {
       case 'kpi': {
-        const metric = config!.metric as string;
+        const metric = String(config?.metric ?? '');
         const value = findKpiValue(dataSources, metric);
         return <SingleKpi metric={metric} value={value} />;
       }
       case 'area-chart':
-        return <CustomTimeseriesWidget appId={appId} metric={config!.metric as string} title={widget.title} />;
+        return <CustomTimeseriesWidget appId={appId} metric={String(config?.metric ?? '')} title={widget.title} />;
       case 'heatmap':
-        return <HeatmapWidget widgetId={widget.widgetId} appId={appId} config={config as { pageUrl?: string; period?: string }} />;
+        return <HeatmapWidget widgetId={widget.widgetId} appId={appId} config={getHeatmapConfig(config)} />;
       default:
         return <p className="text-sm text-text-secondary">{t('unknownWidgetType', { type })}</p>;
     }
   }
 
   switch (type) {
-    case 'kpi': {
-      const items = data as typeof kpiData;
+    case 'kpi':
       return (
         <div className="grid h-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {items.map((item) => (
+          {(data as typeof kpiData).map((item) => (
             <KpiCard key={item.id} id={item.id} value={item.value} delta={item.delta} ratio={item.ratio} />
           ))}
         </div>
       );
-    }
     case 'area-chart':
       return <AreaChart data={data as typeof trafficData} />;
     case 'live-list':
@@ -143,7 +149,7 @@ export function renderWidgetBody(
     case 'globe':
       return <GlobeWidget />;
     case 'heatmap':
-      return <HeatmapWidget widgetId={widget.widgetId} appId={appId} config={config as { pageUrl?: string; period?: string }} />;
+      return <HeatmapWidget widgetId={widget.widgetId} appId={appId} config={getHeatmapConfig(config)} />;
     default:
       return <p className="text-sm text-text-secondary">{t('unknownWidgetType', { type })}</p>;
   }
