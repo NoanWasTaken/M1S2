@@ -85,10 +85,10 @@ export function TrackingManager({ mode }: Props) {
                 setLoadingState(t('loadingApplications'));
 
                 if (authenticatedUser.role === 'admin') {
-                    const { data } = await api.get('/api/v1/admin/companies');
+                    const { data } = await api.get<{ companies: Company[] }>('/api/v1/admin/companies');
                     if (cancelled) return;
 
-                    const nextCompanies = data.companies as Company[];
+                    const nextCompanies = data.companies;
                     setCompanies(nextCompanies);
 
                     const companyId = selectedCompanyId || nextCompanies[0]?._id || '';
@@ -101,10 +101,10 @@ export function TrackingManager({ mode }: Props) {
                         return;
                     }
 
-                    const appRes = await api.get('/api/v1/applications', { params: { companyId } });
+                    const appRes = await api.get<{ applications: Application[] }>('/api/v1/applications', { params: { companyId } });
                     if (cancelled) return;
 
-                    const nextApplications = appRes.data.applications as Application[];
+                    const nextApplications = appRes.data.applications;
                     setApplications(nextApplications);
                     const appId = nextApplications[0]?._id || '';
                     setSelectedApplicationId(appId);
@@ -112,10 +112,10 @@ export function TrackingManager({ mode }: Props) {
                     return;
                 }
 
-                const { data } = await api.get('/api/v1/applications');
+                const { data } = await api.get<{ applications: Application[] }>('/api/v1/applications');
                 if (cancelled) return;
 
-                const nextApplications = data.applications as Application[];
+                const nextApplications = data.applications;
                 setApplications(nextApplications);
                 setSelectedApplicationId(nextApplications[0]?._id || '');
                 setLoadingState(nextApplications[0]?._id ? '' : t('noApplication'));
@@ -149,14 +149,14 @@ export function TrackingManager({ mode }: Props) {
                 setError(null);
 
                 const [tagsRes, funnelsRes] = await Promise.all([
-                    api.get(`/api/v1/tracking/applications/${selectedApplicationId}/tags`),
-                    api.get(`/api/v1/tracking/applications/${selectedApplicationId}/funnels`),
+                    api.get<{ tags: TrackingTag[] }>(`/api/v1/tracking/applications/${selectedApplicationId}/tags`),
+                    api.get<{ funnels: TrackingFunnel[] }>(`/api/v1/tracking/applications/${selectedApplicationId}/funnels`),
                 ]);
 
                 if (cancelled) return;
 
-                const nextTags = (tagsRes.data.tags as TrackingTag[]) ?? [];
-                const nextFunnels = (funnelsRes.data.funnels as TrackingFunnel[]) ?? [];
+                const nextTags = tagsRes.data.tags ?? [];
+                const nextFunnels = funnelsRes.data.funnels ?? [];
                 setTags(nextTags);
                 setFunnels(nextFunnels);
                 setAvailableTagIds(nextTags.map((tag) => tag.tagId));
@@ -190,12 +190,12 @@ export function TrackingManager({ mode }: Props) {
         if (!selectedApplicationId) return;
 
         const [tagsRes, funnelsRes] = await Promise.all([
-            api.get(`/api/v1/tracking/applications/${selectedApplicationId}/tags`),
-            api.get(`/api/v1/tracking/applications/${selectedApplicationId}/funnels`),
+            api.get<{ tags: TrackingTag[] }>(`/api/v1/tracking/applications/${selectedApplicationId}/tags`),
+            api.get<{ funnels: TrackingFunnel[] }>(`/api/v1/tracking/applications/${selectedApplicationId}/funnels`),
         ]);
 
-        const nextTags = tagsRes.data.tags as TrackingTag[];
-        const nextFunnels = funnelsRes.data.funnels as TrackingFunnel[];
+        const nextTags = tagsRes.data.tags;
+        const nextFunnels = funnelsRes.data.funnels;
         setTags(nextTags);
         setFunnels(nextFunnels);
         setAvailableTagIds(nextTags.map((tag) => tag.tagId));
@@ -298,9 +298,9 @@ export function TrackingManager({ mode }: Props) {
         );
     }
 
-    const selectedTags = selectedFunnelTagIds
+    const selectedTags: TrackingTag[] = selectedFunnelTagIds
         .map((tagId) => tags.find((tag) => tag.tagId === tagId))
-        .filter(Boolean) as TrackingTag[];
+        .filter((t): t is TrackingTag => t !== undefined);
 
     function getTagComment(tagId: string) {
         return tags.find((tag) => tag.tagId === tagId)?.comment ?? tagId;
