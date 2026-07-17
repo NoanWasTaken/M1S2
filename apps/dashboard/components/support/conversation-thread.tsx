@@ -461,35 +461,34 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
 
   const stopScreenShare = async () => {
     const stream = screenStreamRef.current;
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-    }
+    if (stream) stream.getTracks().forEach((t) => t.stop());
     screenStreamRef.current = null;
     setIsSharingScreen(false);
     syncLocalVideoDisplays(false);
 
     const pc = peerConnectionRef.current;
-    const cameraStream = cameraStreamRef.current;
-    if (!pc || !cameraStream) return;
+    if (!pc) return;
+
+    let cameraStream = cameraStreamRef.current;
+    const camLive = cameraStream?.getTracks().some((tr) => tr.readyState === 'live');
+    if (!cameraStream || !camLive) {
+      try {
+        cameraStream = await ensureMedia();
+      } catch {
+        pc.getSenders().forEach((s) => { if (s.track?.kind === 'video') void s.replaceTrack(null); });
+        return;
+      }
+    }
 
     const videoTrack = cameraStream.getVideoTracks()[0];
     const audioTrack = cameraStream.getAudioTracks()[0];
-
     pc.getSenders().forEach((sender) => {
-      if (sender.track?.kind === 'video' && videoTrack) {
-        void sender.replaceTrack(videoTrack);
-      }
-      if (sender.track?.kind === 'audio' && audioTrack) {
-        void sender.replaceTrack(audioTrack);
-      }
+      if (sender.track?.kind === 'video' && videoTrack) void sender.replaceTrack(videoTrack);
+      if (sender.track?.kind === 'audio' && audioTrack) void sender.replaceTrack(audioTrack);
     });
 
-    if (localVideoRef.current) {
-      localVideoRef.current.srcObject = cameraStream;
-    }
-    if (cameraPreviewRef.current) {
-      cameraPreviewRef.current.srcObject = cameraStream;
-    }
+    if (localVideoRef.current) localVideoRef.current.srcObject = cameraStream;
+    if (cameraPreviewRef.current) cameraPreviewRef.current.srcObject = cameraStream;
   };
 
   const toggleFullscreen = async () => {
@@ -518,7 +517,7 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
     if (!signal) return;
 
     const sessionId = typeof signal.sessionId === 'string' ? signal.sessionId : null;
-    if (sessionId && callSessionRef.current.sessionId && sessionId !== callSessionRef.current.sessionId) {
+    if (signal.type !== 'offer' && sessionId && callSessionRef.current.sessionId && sessionId !== callSessionRef.current.sessionId) {
       const isEnded = signal.type === 'state'
         && signal.payload
         && typeof signal.payload === 'object'

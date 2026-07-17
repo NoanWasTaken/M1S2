@@ -107,31 +107,43 @@ export function useConversationStream(options: UseConversationStreamOptions = {}
   useEffect(() => {
     let cancelled = false;
     let es: EventSource | null = null;
+    let retry = 0;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
     function connect() {
       if (cancelled) return;
-
       es?.close();
       es = new EventSource(SSE_URL, { withCredentials: true });
-
       attachHandlers(es, handlersRef);
+
+      es.onopen = () => { retry = 0; };
+      es.onerror = () => {
+        if (cancelled) return;
+        es?.close();
+        const delay = Math.min(1000 * 2 ** retry, 15000); // 1s,2s,4s… max 15s
+        retry = Math.min(retry + 1, 4);
+        retryTimer = setTimeout(connect, delay);
+      };
     }
 
     connect();
 
+    const onVisible = () => {
+      if (!cancelled && document.visibilityState === 'visible') connect();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
     const refreshInterval = setInterval(async () => {
       if (cancelled) return;
-      try {
-        await refreshAccessToken();
-      } catch {
-        return;
-      }
+      try { await refreshAccessToken(); } catch { return; }
       connect();
     }, 10 * 60 * 1000);
 
     return () => {
       cancelled = true;
       clearInterval(refreshInterval);
+      if (retryTimer) clearTimeout(retryTimer);
+      document.removeEventListener('visibilitychange', onVisible);
       es?.close();
     };
   }, [reconnectKey]);
