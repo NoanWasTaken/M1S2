@@ -1,14 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { GlobeMethods } from 'react-globe.gl';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { useGlobeStream, type GlobePoint } from '@/lib/use-globe-stream';
 
 const Globe = dynamic(() => import('react-globe.gl'), { ssr: false });
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type GlobeInstance = any;
 
 function GlobeView({
     points,
@@ -19,7 +17,7 @@ function GlobeView({
     interactive: boolean;
     onHover?: (p: GlobePoint | null) => void;
 }) {
-    const globeRef = useRef<GlobeInstance>(null);
+    const globeRef = useRef<GlobeMethods>(undefined);
     const containerRef = useRef<HTMLDivElement>(null);
     const [size, setSize] = useState({ width: 0, height: 0 });
 
