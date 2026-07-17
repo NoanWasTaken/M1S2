@@ -326,7 +326,8 @@
     "callErrorNoDevice": "Aucune caméra ou micro n'a été trouvé sur cet appareil.",
     "callErrorShare": "Impossible de partager votre écran.",
     "callErrorFullscreenEnter": "Impossible de passer en plein écran.",
-    "callErrorFullscreenExit": "Impossible de quitter le plein écran."
+    "callErrorFullscreenExit": "Impossible de quitter le plein écran.",
+    "callErrorTimeout": "La connexion a expiré. Veuillez réessayer."
   },
   "settings": {
     "title": "Paramètres",

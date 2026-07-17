@@ -326,7 +326,8 @@
     "callErrorNoDevice": "No camera or microphone was found on this device.",
     "callErrorShare": "Unable to share your screen.",
     "callErrorFullscreenEnter": "Unable to enter fullscreen mode.",
-    "callErrorFullscreenExit": "Unable to exit fullscreen mode."
+    "callErrorFullscreenExit": "Unable to exit fullscreen mode.",
+    "callErrorTimeout": "Connection timed out. Please try again."
   },
   "settings": {
     "title": "Settings",

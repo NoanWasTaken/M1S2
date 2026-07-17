@@ -62,10 +62,11 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
   const mediaGenerationRef = useRef(0);
   const isMountedRef = useRef(true);
+  const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stopCallRef = useRef<(options?: { notifyPeer?: boolean }) => void>(() => {});
+  const enqueueSignalRef = useRef<(signal: CallSignal | CallSignalMessage | null | undefined) => void>(() => {});
   const signalQueueRef = useRef<Promise<void>>(Promise.resolve());
   const processedOfferKeysRef = useRef<Set<string>>(new Set());
-  const callStatusRef = useRef(callStatus);
-  callStatusRef.current = callStatus;
   const callSessionRef = useRef<{ startedAt: number | null; ended: boolean; hasLoggedStart: boolean; isInitiator: boolean; sessionId: string | null }>({
     startedAt: null,
     ended: false,
@@ -77,6 +78,26 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    if (callStatus === 'connecting') {
+      connectionTimeoutRef.current = setTimeout(() => {
+        setCallError(t('callErrorTimeout'));
+        stopCallRef.current({ notifyPeer: false });
+      }, 30000);
+    } else {
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+        connectionTimeoutRef.current = null;
+      }
+    }
+    return () => {
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+        connectionTimeoutRef.current = null;
+      }
+    };
+  }, [callStatus]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -287,8 +308,10 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
   };
 
   const syncRemoteVideoDisplay = () => {
-    if (remoteVideoRef.current && remoteStreamRef.current) {
-      remoteVideoRef.current.srcObject = remoteStreamRef.current;
+    const video = remoteVideoRef.current;
+    if (video && remoteStreamRef.current) {
+      video.srcObject = remoteStreamRef.current;
+      video.play().catch(() => {});
     }
   };
 
@@ -358,8 +381,14 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
     }
 
     const stream = await ensureMedia();
+
     const pc = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun.cloudflare.com:3478' },
+      ],
     });
 
     stream.getTracks().forEach((track) => pc.addTrack(track, stream));
@@ -384,6 +413,12 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
         setHasRemoteStream(true);
         syncRemoteVideoDisplay();
         setCallStatus('connected');
+      }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
+        stopCall({ notifyPeer: false });
       }
     };
 
@@ -610,7 +645,6 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
       try {
         await pc.setRemoteDescription(signal.payload as RTCSessionDescriptionInit);
         await flushPendingCandidates(pc);
-        setCallStatus('connected');
         setShowCallView(true);
         syncLocalVideoDisplays(isSharingScreen);
         syncRemoteVideoDisplay();
@@ -649,20 +683,25 @@ export function ConversationThread({ conversationId, messages, onNewMessage, typ
   };
 
   useEffect(() => {
+    stopCallRef.current = stopCall;
+    enqueueSignalRef.current = enqueueSignal;
+  });
+
+  useEffect(() => {
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
-      stopCall({ notifyPeer: false });
+      stopCallRef.current({ notifyPeer: false });
     };
   }, [conversationId]);
 
   useEffect(() => {
-    enqueueSignal(incomingCallSignal);
+    enqueueSignalRef.current(incomingCallSignal);
   }, [incomingCallSignal]);
 
   useEffect(() => {
     const unsubscribe = subscribeCallSignals((signal) => {
-      enqueueSignal(signal);
+      enqueueSignalRef.current(signal);
     });
     return unsubscribe;
   }, [conversationId]);

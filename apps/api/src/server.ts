@@ -79,7 +79,6 @@ async function start() {
   app.use('/api/v1/conversations', conversationsRouter);
   app.use('/api/v1/alerts', alertRouter);
   app.use('/api/v1/share', shareRouter);
-
   app.use(errorHandler);
   startHeartbeat();
   app.listen(env.port);
