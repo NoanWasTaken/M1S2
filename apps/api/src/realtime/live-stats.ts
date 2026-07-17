@@ -86,3 +86,29 @@ export async function emitDashboardUpdate(appId: string): Promise<void> {
     console.error('[live-stats] emitDashboardUpdate failed:', err);
   }
 }
+
+export async function emitHeatmapPoint(
+  appId: string,
+  clickEvent: { url?: string; payload: Record<string, unknown> },
+): Promise<void> {
+  try {
+    const companyId = await resolveCompanyId(appId);
+    if (!companyId) return;
+
+    const p = clickEvent.payload;
+    const px = Number(p.px) || 0;
+    const py = Number(p.py) || 0;
+    const bx = Math.floor(px / 10) * 10;
+    const by = Math.floor(py / 10) * 10;
+
+    console.info('[live-stats] emitHeatmapPoint', { url: clickEvent.url, bx, by });
+    pushToAccount(companyId, 'heatmap:point', {
+      url: clickEvent.url,
+      x: bx,
+      y: by,
+      count: 1,
+    });
+  } catch (err) {
+    console.error('[live-stats] emitHeatmapPoint failed:', err);
+  }
+}

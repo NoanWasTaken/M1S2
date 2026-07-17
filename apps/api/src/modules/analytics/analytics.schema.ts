@@ -27,6 +27,7 @@ export const heatmapQuerySchema = z.object({
 export const screenshotQuerySchema = z.object({
     url: z.string().min(1).max(2048),
     applicationId: z.string().min(1),
+    viewportWidth: z.coerce.number().int().positive().default(1280),
 });
 
 export type AnalyticsQueryInput = z.infer<typeof analyticsQuerySchema>;

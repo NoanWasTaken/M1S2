@@ -11,9 +11,9 @@ export const getScreenshot = asyncHandler(async (req: Request, res: Response) =>
   if (!parsed.success) {
     throw new AppError(400, 'invalid_query', parsed.error.issues[0]?.message ?? 'Invalid query.');
   }
-  const { url, applicationId } = parsed.data;
-  console.info('[heatmap][screenshot] request', { applicationId, url });
-  const buf = await heatmapService.getScreenshot(applicationId, url);
+  const { url, applicationId, viewportWidth } = parsed.data;
+  console.info('[heatmap][screenshot] request', { applicationId, url, viewportWidth });
+  const buf = await heatmapService.getScreenshot(applicationId, url, viewportWidth);
   res.set('Content-Type', 'image/webp');
   res.set('Cache-Control', 'private, max-age=3600');
   res.send(buf);

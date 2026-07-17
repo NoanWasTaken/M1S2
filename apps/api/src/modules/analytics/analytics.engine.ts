@@ -144,20 +144,8 @@ export function buildHeatmapPipeline(config: WidgetConfig): PipelineStage[] {
     { $match: match },
     {
       $addFields: {
-        nx: {
-          $cond: [
-            { $gt: ['$payload.vw', 0] },
-            { $round: [{ $multiply: [{ $divide: ['$payload.x', '$payload.vw'] }, 1280] }] },
-            '$payload.px',
-          ],
-        },
-        ny: {
-          $cond: [
-            { $gt: ['$payload.vh', 0] },
-            { $round: [{ $multiply: [{ $divide: ['$payload.y', '$payload.vh'] }, 900] }] },
-            '$payload.py',
-          ],
-        },
+        nx: '$payload.px',
+        ny: '$payload.py',
       },
     },
     {
