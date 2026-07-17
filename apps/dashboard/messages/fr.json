@@ -73,7 +73,10 @@
       "passwordPlaceholder": "8 caractères minimum",
       "confirmPassword": "Confirmer le mot de passe",
       "confirmPasswordPlaceholder": "Répétez le mot de passe",
-      "invalidEmail": "Email invalide"
+      "invalidEmail": "Email invalide",
+      "acceptTermsPrefix": "J'ai lu et j'accepte les",
+      "acceptTermsLink": "conditions générales d'utilisation",
+      "acceptTermsRequired": "Vous devez accepter les CGU pour créer un compte"
     },
     "pendingValidation": {
       "title": "Compte créé avec succès",
@@ -103,6 +106,7 @@
     "settings": "Paramètres",
     "team": "Équipe",
     "liveActive": "Temps réel actif",
+    "cgu": "CGU",
     "logout": "Déconnexion",
     "noSite": "Aucun site",
     "noAppCreate": "Créer une application",
@@ -584,5 +588,84 @@
     "ttlPlaceholder": "ex: 30",
     "ttlUnit": "jours (optionnel)",
     "ttlHint": "Sans durée, le lien est permanent jusqu'à révocation."
+  },
+  "cgu": {
+    "eyebrow": "Documents légaux",
+    "title": "Conditions générales d'utilisation",
+    "intro": "Les présentes Conditions Générales d'Utilisation (CGU) régissent l'accès et l'usage de la plateforme Analytix, service SaaS d'analyse d'audience et de comportement en temps réel. En créant un compte ou en utilisant le Service, vous acceptez sans réserve ces CGU.",
+    "lastUpdated": "Dernière mise à jour : 17 juillet 2026",
+    "tocLabel": "Sommaire",
+    "backToRegister": "Inscription",
+    "footer": "Pour toute question relative aux présentes CGU, contactez-nous à l'adresse indiquée à l'article « Contact ». L'utilisation continue du Service après une mise à jour vaut acceptation des nouvelles conditions.",
+    "sections": {
+      "object": {
+        "title": "Objet",
+        "body": "Les présentes CGU ont pour objet de définir les modalités et conditions dans lesquelles Analytix met à disposition des Utilisateurs sa plateforme d'analyse d'audience, de tracking comportemental, de tableaux de bord et de support intégré.\n\nElles s'appliquent à toute personne physique ou morale qui s'inscrit, se connecte ou utilise le Service, qu'elle agisse en qualité de webmaster (propriétaire ou membre d'équipe) ou d'administrateur de la plateforme."
+      },
+      "definitions": {
+        "title": "Définitions",
+        "body": "« Service » : l'ensemble des fonctionnalités proposées par Analytix, incluant l'API, le tableau de bord, le SDK de tracking, le support messagerie et les appels vidéo.\n\n« Utilisateur » : toute personne disposant d'un compte sur la plateforme.\n\n« Entreprise » / « Compte Entreprise » : structure enregistrée lors de l'inscription, rattachée à un ou plusieurs Utilisateurs.\n\n« Application » : site ou propriété digitale rattachée à une Entreprise, identifiée par un App ID et un secret, sur laquelle le SDK peut être installé.\n\n« Données de tracking » : événements, pages vues, interactions et métadonnées collectés via le SDK ou l'API.\n\n« Contenu Utilisateur » : messages de support, documents (ex. KBIS), configurations et tout élément saisi ou téléversé par l'Utilisateur."
+      },
+      "access": {
+        "title": "Accès au Service",
+        "body": "L'accès au Service nécessite un compte valide. L'inscription d'une Entreprise est soumise à une procédure de validation administrative (notamment dépôt d'un KBIS) pouvant entraîner un statut « en attente », « validé » ou « rejeté ».\n\nL'Utilisateur s'engage à fournir des informations exactes, à jour et complètes. Il est responsable de la confidentialité de ses identifiants et de toute activité réalisée via son compte.\n\nAnalytix se réserve le droit de refuser, suspendre ou limiter l'accès en cas d'informations inexactes, de non-conformité aux présentes CGU, ou de risque pour la sécurité de la plateforme."
+      },
+      "service": {
+        "title": "Description du Service",
+        "body": "Analytix propose notamment : la collecte et l'agrégation d'événements d'audience via un SDK navigateur et/ou des intégrations serveur ; des tableaux de bord (pages, événements, tags, tunnels de conversion, statistiques) ; des flux temps réel (SSE) ; un module de support (messagerie, invitations d'équipe, appels vidéo WebRTC) ; des fonctionnalités d'administration pour la validation des Entreprises et la supervision.\n\nLe Service est fourni « en l'état ». Les fonctionnalités peuvent évoluer. Analytix n'est pas un substitut à un conseil juridique, fiscal ou commercial."
+      },
+      "accounts": {
+        "title": "Comptes, rôles et équipe",
+        "body": "Plusieurs rôles coexistent : administrateur plateforme ; webmaster propriétaire (owner) d'une Entreprise ; membre d'équipe (member) invité par le propriétaire.\n\nLe propriétaire peut inviter des membres. L'acceptation d'une invitation crée un compte lié à l'Entreprise. Chaque Utilisateur demeure responsable de ses actions.\n\nL'Utilisateur s'interdit de céder, louer ou partager son compte de manière abusive, et de tenter d'accéder à des espaces ou données auxquels il n'est pas autorisé."
+      },
+      "obligationsUser": {
+        "title": "Obligations de l'Utilisateur",
+        "body": "L'Utilisateur s'engage à utiliser le Service conformément aux lois applicables (notamment RGPD, ePrivacy, droit de la consommation et du commerce électronique le cas échéant) et aux présentes CGU.\n\nIl s'interdit notamment : d'installer le SDK ou de collecter des données sans base légale et information adaptées des visiteurs finaux ; de contourner les mesures de sécurité ; d'introduire des logiciels malveillants ; d'utiliser le Service pour du spam, du harcèlement ou des contenus illicites via le support ; de surcharger volontairement l'infrastructure ; de reverse-engineer le Service au-delà de ce que la loi autorise.\n\nL'Utilisateur est seul responsable du contenu de son site, de la configuration du tracking et des informations affichées aux visiteurs finaux (bandeau cookies, politique de confidentialité, etc.)."
+      },
+      "obligationsProvider": {
+        "title": "Obligations d'Analytix",
+        "body": "Analytix s'efforce de fournir un Service fiable, sécurisé et évolutif. Des mesures raisonnables de sécurité (authentification JWT, hachage des mots de passe, contrôle d'accès par rôles, limitation de débit) sont mises en œuvre.\n\nAnalytix n'est pas tenue à une obligation de résultat quant à la disponibilité continue, à l'exactitude absolue des statistiques, ni à la qualité des flux vidéo pair-à-pair, lesquels dépendent notamment des réseaux et navigateurs des Utilisateurs."
+      },
+      "data": {
+        "title": "Données personnelles et confidentialité",
+        "body": "Selon le cas, Analytix peut agir en qualité de responsable de traitement (gestion des comptes Utilisateurs, administration) et/ou de sous-traitant pour le compte de l'Entreprise concernant les Données de tracking collectées sur les Applications de l'Utilisateur.\n\nL'Entreprise demeure responsable de déterminer la finalité du tracking, d'obtenir le consentement ou de s'appuyer sur une autre base légale, et d'informer les personnes concernées.\n\nLes données de compte (email, statut, documents d'inscription) sont traitées pour fournir le Service, sécuriser les accès et respecter les obligations légales. Les détails complémentaires peuvent être précisés dans une politique de confidentialité distincte lorsqu'elle est publiée.\n\nL'Utilisateur peut exercer ses droits (accès, rectification, effacement, limitation, opposition, portabilité) dans les limites légales, via les canaux de contact indiqués."
+      },
+      "sdk": {
+        "title": "SDK, API et intégration",
+        "body": "Le SDK et l'API sont mis à disposition pour intégrer le tracking sur les Applications autorisées. Les secrets d'application doivent rester confidentiels. L'Utilisateur configure les origines autorisées et limite l'usage à ses sites légitimes.\n\nToute utilisation frauduleuse des identifiants, toute revente d'accès API ou toute collecte hors périmètre déclaré pourra entraîner la suspension du compte et, le cas échéant, des poursuites."
+      },
+      "support": {
+        "title": "Support et communications",
+        "body": "Le module de support permet d'échanger des messages et, le cas échéant, d'établir des appels vidéo. Les messages système liés aux appels peuvent être conservés dans l'historique de conversation.\n\nLes Utilisateurs s'engagent à un usage professionnel et respectueux. Les appels vidéo reposent sur WebRTC ; Analytix ne garantit pas la qualité audiovisuelle ni l'enregistrement des appels, sauf fonctionnalité explicitement documentée.\n\nLes notifications (emails, toasts, pop-ins d'appel) font partie du fonctionnement normal du Service."
+      },
+      "ip": {
+        "title": "Propriété intellectuelle",
+        "body": "La plateforme, son code, son design, ses marques et sa documentation restent la propriété d'Analytix ou de ses ayants droit. Aucune cession de droits n'est consentie hors licence d'usage limitée, non exclusive et révocable, strictement nécessaire à l'utilisation du Service.\n\nL'Utilisateur conserve les droits sur son Contenu Utilisateur et sur les données issues de ses Applications, sous réserve des licences nécessaires pour héberger, traiter et afficher ces éléments dans le cadre du Service."
+      },
+      "availability": {
+        "title": "Disponibilité et maintenance",
+        "body": "Analytix peut interrompre temporairement le Service pour maintenance, mises à jour, incidents de sécurité ou cas de force majeure. Dans la mesure du possible, les Utilisateurs seront informés des interruptions planifiées.\n\nAucune compensation automatique n'est due au titre d'une indisponibilité, sauf engagement contractuel spécifique écrit."
+      },
+      "liability": {
+        "title": "Responsabilité",
+        "body": "Dans les limites autorisées par la loi, Analytix ne saurait être responsable des dommages indirects (perte de chiffre d'affaires, perte de données non imputable à une faute grave d'Analytix, préjudice d'image, perte d'opportunité).\n\nL'Utilisateur est responsable de ses sauvegardes, de la conformité de son tracking et de l'usage qu'il fait des statistiques produites.\n\nRien dans les présentes CGU n'exclut la responsabilité en cas de dol, faute lourde, ou atteinte à l'intégrité physique, dans la mesure où une telle exclusion serait illégale."
+      },
+      "suspension": {
+        "title": "Suspension et résiliation",
+        "body": "L'Utilisateur peut cesser d'utiliser le Service à tout moment. Selon les fonctionnalités disponibles, la suppression de compte ou d'Entreprise peut être demandée via le support ou l'administration.\n\nAnalytix peut suspendre ou résilier l'accès en cas de manquement aux CGU, d'impayés le cas échéant, de risque sécurité, de décision administrative, ou de cessation du Service.\n\nEn cas de résiliation, l'accès au tableau de bord cesse. Des données peuvent être conservées pendant la durée nécessaire aux obligations légales ou à la défense de droits, puis effacées ou anonymisées selon les procédures internes."
+      },
+      "modifications": {
+        "title": "Modification des CGU",
+        "body": "Analytix peut modifier les présentes CGU pour refléter l'évolution du Service, de la réglementation ou de l'organisation. La date de dernière mise à jour figure en tête de page.\n\nEn cas de modification substantielle, une information pourra être communiquée via le Service ou par email. La poursuite de l'utilisation après entrée en vigueur vaut acceptation. Si l'Utilisateur refuse les nouvelles conditions, il doit cesser d'utiliser le Service."
+      },
+      "law": {
+        "title": "Droit applicable et litiges",
+        "body": "Les présentes CGU sont régies par le droit français.\n\nEn cas de litige relatif à leur interprétation ou exécution, les parties s'efforceront de trouver une solution amiable. À défaut, les tribunaux compétents français seront seuls compétents, sous réserve des règles d'ordre public applicables aux consommateurs le cas échéant."
+      },
+      "contact": {
+        "title": "Contact",
+        "body": "Pour toute question relative aux CGU, à la confidentialité ou à l'exercice de droits : utilisez le module Support de la plateforme, ou contactez l'équipe Analytix via l'adresse de contact communiquée lors de l'inscription / validation de votre Entreprise.\n\nLes demandes manifestement abusives, répétitives ou excessives pourront être refusées dans les conditions prévues par la réglementation."
+      }
+    }
   }
 }

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useController, useForm } from 'react-hook-form';
 import { zodResolver } from '@/lib/zod-resolver';
 import { useTranslations } from 'next-intl';
+import { z } from 'zod';
 import { registerSchema, type RegisterInput } from '@m1s2/shared';
 import { useAuth } from '@/providers/auth-provider';
 import { GuestOnly } from '@/components/auth/guest-only';
@@ -16,10 +17,12 @@ import { api } from '@/lib/api-client';
 
 const MAX_KBIS_BYTES = 10 * 1024 * 1024;
 
+type RegisterFormValues = RegisterInput & { acceptTerms: boolean };
+
 function KbisFileField({
   control,
 }: {
-  control: ReturnType<typeof useForm<RegisterInput>>['control'];
+  control: ReturnType<typeof useForm<RegisterFormValues>>['control'];
 }) {
   const t = useTranslations('auth.register');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -145,13 +148,25 @@ export default function RegisterPage() {
   const t = useTranslations('auth.register');
   const [apiError, setApiError] = useState<string | null>(null);
 
-  const form = useForm<RegisterInput>({
-    resolver: zodResolver(registerSchema),
+  const formSchema = registerSchema.and(
+    z.object({
+      acceptTerms: z.boolean().refine((value) => value === true, {
+        message: t('acceptTermsRequired'),
+      }),
+    }),
+  );
+
+  const form = useForm<RegisterFormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       company: { name: '', baseUrl: '', kbisFileRef: '', contact: { name: '', email: '', phone: '' } },
       user: { email: '', password: '', confirmPassword: '' },
+      acceptTerms: false,
     },
   });
+
+  const acceptTerms = form.watch('acceptTerms');
+  const acceptTermsError = form.formState.errors.acceptTerms?.message;
 
   const onSubmit = form.handleSubmit(async (data) => {
     setApiError(null);
@@ -274,6 +289,37 @@ export default function RegisterPage() {
               type="password"
               placeholder={t('confirmPasswordPlaceholder')}
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border-subtle bg-bg-card px-3 py-3">
+              <input
+                type="checkbox"
+                checked={acceptTerms}
+                onChange={(e) => {
+                  form.setValue('acceptTerms', e.target.checked, {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  });
+                }}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-border-subtle accent-(--accent)"
+              />
+              <span className="text-sm leading-5 text-text-secondary">
+                {t('acceptTermsPrefix')}{' '}
+                <Link
+                  href="/legal/cgu"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-accent hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {t('acceptTermsLink')}
+                </Link>
+              </span>
+            </label>
+            {acceptTermsError && (
+              <p className="text-xs text-danger">{acceptTermsError}</p>
+            )}
           </div>
 
           <Button

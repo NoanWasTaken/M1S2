@@ -73,7 +73,10 @@
       "passwordPlaceholder": "8 characters minimum",
       "confirmPassword": "Confirm password",
       "confirmPasswordPlaceholder": "Repeat the password",
-      "invalidEmail": "Invalid email"
+      "invalidEmail": "Invalid email",
+      "acceptTermsPrefix": "I have read and accept the",
+      "acceptTermsLink": "terms of service",
+      "acceptTermsRequired": "You must accept the terms to create an account"
     },
     "pendingValidation": {
       "title": "Account created successfully",
@@ -103,6 +106,7 @@
     "settings": "Settings",
     "team": "Team",
     "liveActive": "Live active",
+    "cgu": "Terms",
     "logout": "Logout",
     "noSite": "No site",
     "noAppCreate": "Create an application",
@@ -584,5 +588,84 @@
     "ttlPlaceholder": "e.g. 30",
     "ttlUnit": "days (optional)",
     "ttlHint": "Without a duration, the link is permanent until revoked."
+  },
+  "cgu": {
+    "eyebrow": "Legal",
+    "title": "Terms of Service",
+    "intro": "These Terms of Service govern access to and use of Analytix, a SaaS platform for real-time audience and behavioural analytics. By creating an account or using the Service, you accept these Terms in full.",
+    "lastUpdated": "Last updated: 17 July 2026",
+    "tocLabel": "Contents",
+    "backToRegister": "Sign up",
+    "footer": "For questions about these Terms, contact us using the details in the Contact section. Continued use of the Service after an update constitutes acceptance of the revised Terms.",
+    "sections": {
+      "object": {
+        "title": "Purpose",
+        "body": "These Terms define the conditions under which Analytix provides Users with its audience analytics platform, behavioural tracking, dashboards and built-in support.\n\nThey apply to anyone who registers, signs in or uses the Service, whether as a webmaster (owner or team member) or as a platform administrator."
+      },
+      "definitions": {
+        "title": "Definitions",
+        "body": "\"Service\": all features offered by Analytix, including the API, dashboard, tracking SDK, messaging support and video calls.\n\n\"User\": any person with an account on the platform.\n\n\"Company\" / \"Company Account\": the organisation created at registration, linked to one or more Users.\n\n\"Application\": a website or digital property linked to a Company, identified by an App ID and secret, on which the SDK may be installed.\n\n\"Tracking Data\": events, page views, interactions and metadata collected via the SDK or API.\n\n\"User Content\": support messages, documents (e.g. company registration files), configuration and any material entered or uploaded by the User."
+      },
+      "access": {
+        "title": "Access to the Service",
+        "body": "Access requires a valid account. Company registration is subject to administrative validation (including submission of a business registration document) and may result in pending, validated or rejected status.\n\nUsers must provide accurate, up-to-date information and keep credentials confidential. They are responsible for all activity under their account.\n\nAnalytix may refuse, suspend or limit access in case of inaccurate information, breach of these Terms, or security risk."
+      },
+      "service": {
+        "title": "Description of the Service",
+        "body": "Analytix notably provides: collection and aggregation of audience events via a browser SDK and/or server integrations; dashboards (pages, events, tags, conversion funnels, stats); real-time streams (SSE); support (messaging, team invites, WebRTC video calls); and admin tools for company validation and oversight.\n\nThe Service is provided \"as is\". Features may evolve. Analytix is not a substitute for legal, tax or business advice."
+      },
+      "accounts": {
+        "title": "Accounts, roles and team",
+        "body": "Several roles exist: platform administrator; webmaster Company owner; team member invited by the owner.\n\nOwners may invite members. Accepting an invitation creates an account linked to the Company. Each User remains responsible for their actions.\n\nUsers must not abusively share accounts or attempt to access data or areas they are not authorised to use."
+      },
+      "obligationsUser": {
+        "title": "User obligations",
+        "body": "Users must use the Service in compliance with applicable law (including GDPR/ePrivacy where relevant) and these Terms.\n\nIn particular, Users must not: install the SDK or collect data without a lawful basis and proper notice to end visitors; bypass security controls; introduce malware; use support for spam, harassment or unlawful content; deliberately overload infrastructure; or reverse-engineer the Service beyond what the law allows.\n\nUsers alone are responsible for their website content, tracking configuration and notices shown to end visitors (cookie banners, privacy policy, etc.)."
+      },
+      "obligationsProvider": {
+        "title": "Analytix obligations",
+        "body": "Analytix aims to provide a reliable, secure and evolving Service. Reasonable security measures are implemented (JWT authentication, password hashing, role-based access, rate limiting).\n\nAnalytix does not guarantee uninterrupted availability, absolute statistical accuracy, or peer-to-peer video quality, which also depend on Users' networks and browsers."
+      },
+      "data": {
+        "title": "Personal data and confidentiality",
+        "body": "Depending on the context, Analytix may act as a controller (User account administration) and/or as a processor on behalf of the Company for Tracking Data collected on the User's Applications.\n\nThe Company remains responsible for determining the purpose of tracking, obtaining consent or relying on another lawful basis, and informing data subjects.\n\nAccount data (email, status, registration documents) is processed to provide the Service, secure access and meet legal obligations. Further details may be set out in a separate privacy policy when published.\n\nUsers may exercise their rights (access, rectification, erasure, restriction, objection, portability) within legal limits via the contact channels indicated."
+      },
+      "sdk": {
+        "title": "SDK, API and integration",
+        "body": "The SDK and API are provided to integrate tracking on authorised Applications. Application secrets must remain confidential. Users must configure allowed origins and limit use to legitimate sites.\n\nFraudulent use of credentials, resale of API access or collection outside the declared scope may lead to account suspension and, where applicable, legal action."
+      },
+      "support": {
+        "title": "Support and communications",
+        "body": "Support enables messaging and, where applicable, video calls. System messages related to calls may be kept in conversation history.\n\nUsers must keep a professional and respectful tone. Video calls rely on WebRTC; Analytix does not guarantee audiovisual quality or call recording unless an explicitly documented feature provides it.\n\nNotifications (emails, toasts, incoming-call pop-ins) are part of normal Service operation."
+      },
+      "ip": {
+        "title": "Intellectual property",
+        "body": "The platform, code, design, trademarks and documentation remain the property of Analytix or its licensors. No rights are assigned beyond a limited, non-exclusive, revocable licence strictly necessary to use the Service.\n\nUsers retain rights in their User Content and data from their Applications, subject to licences needed for Analytix to host, process and display them within the Service."
+      },
+      "availability": {
+        "title": "Availability and maintenance",
+        "body": "Analytix may temporarily interrupt the Service for maintenance, updates, security incidents or force majeure. Where reasonably possible, Users will be informed of planned downtime.\n\nNo automatic compensation is owed for unavailability unless a specific written commitment provides otherwise."
+      },
+      "liability": {
+        "title": "Liability",
+        "body": "To the extent permitted by law, Analytix shall not be liable for indirect damages (lost revenue, data loss not attributable to Analytix's gross negligence, reputational harm, lost opportunity).\n\nUsers are responsible for their backups, tracking compliance and how they use produced statistics.\n\nNothing in these Terms excludes liability for fraud, gross negligence, or personal injury where such exclusion would be unlawful."
+      },
+      "suspension": {
+        "title": "Suspension and termination",
+        "body": "Users may stop using the Service at any time. Depending on available features, account or Company deletion may be requested via support or administration.\n\nAnalytix may suspend or terminate access for breach of these Terms, unpaid fees if applicable, security risk, administrative decision, or Service discontinuation.\n\nUpon termination, dashboard access ends. Some data may be retained as required by law or for the defence of rights, then deleted or anonymised according to internal procedures."
+      },
+      "modifications": {
+        "title": "Changes to these Terms",
+        "body": "Analytix may amend these Terms to reflect Service, regulatory or organisational changes. The last-updated date appears at the top of this page.\n\nFor material changes, notice may be given in the Service or by email. Continued use after the effective date constitutes acceptance. Users who refuse the new Terms must stop using the Service."
+      },
+      "law": {
+        "title": "Governing law and disputes",
+        "body": "These Terms are governed by French law.\n\nIn case of dispute, the parties shall seek an amicable resolution. Failing that, French courts shall have exclusive jurisdiction, subject to mandatory consumer protection rules where applicable."
+      },
+      "contact": {
+        "title": "Contact",
+        "body": "For questions about these Terms, privacy or rights requests: use the platform Support module, or contact the Analytix team at the address provided during Company registration / validation.\n\nManifestly unfounded, excessive or repetitive requests may be refused as allowed by applicable law."
+      }
+    }
   }
 }

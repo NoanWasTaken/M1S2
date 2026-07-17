@@ -15,6 +15,7 @@ import { useAuth } from '@/providers/auth-provider';
 import {
   useConversationStream,
   type SupportMessageEvent,
+  type SupportNewConversationEvent,
 } from '@/lib/use-conversation-stream';
 import { SupportBadge } from '@/components/support/support-badge';
 
@@ -129,15 +130,13 @@ export function SupportNotificationsProvider({ children }: { children: ReactNode
       }));
 
       const id = `${payload.messageId}-${Date.now()}`;
-      setToasts((prev) => [
-        {
-          id,
-          conversationId: payload.conversationId,
-          content: payload.content,
-          senderRole: payload.senderRole,
-        },
-        ...prev,
-      ].slice(0, 3));
+      const toast: ToastItem = {
+        id,
+        conversationId: payload.conversationId,
+        content: payload.content,
+        senderRole: payload.senderRole,
+      };
+      setToasts((prev) => [toast, ...prev].slice(0, 3));
 
       window.setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -146,7 +145,32 @@ export function SupportNotificationsProvider({ children }: { children: ReactNode
     [activeConversationId, user?.id],
   );
 
-  useConversationStream({ onMessage: handleMessage });
+  const handleNewConversation = useCallback(
+    (payload: SupportNewConversationEvent) => {
+      if (payload.conversationId === activeConversationId) return;
+
+      setUnreadCounts((prev) => ({
+        ...prev,
+        [payload.conversationId]: (prev[payload.conversationId] ?? 0) + 1,
+      }));
+
+      const id = `new-${payload.conversationId}-${Date.now()}`;
+      const toast: ToastItem = {
+        id,
+        conversationId: payload.conversationId,
+        content: payload.subject,
+        senderRole: 'webmaster',
+      };
+      setToasts((prev) => [toast, ...prev].slice(0, 3));
+
+      window.setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+      }, 6000);
+    },
+    [activeConversationId],
+  );
+
+  useConversationStream({ onMessage: handleMessage, onNewConversation: handleNewConversation });
 
   const unreadTotal = useMemo(
     () => Object.values(unreadCounts).reduce((sum, n) => sum + n, 0),
@@ -185,7 +209,7 @@ export function useSupportNotifications(): SupportNotificationsContextValue {
     return {
       unreadCounts: {},
       unreadTotal: 0,
-      markConversationRead: () => {},
+      markConversationRead: () => { },
     };
   }
   return ctx;
