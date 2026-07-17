@@ -180,7 +180,16 @@ export default function AdminSupportPage() {
     load();
   }, [activeId, load, user?.id]);
 
-  const handlePresence = useCallback((_payload: SupportPresenceEvent) => {
+  const handlePresence = useCallback((payload: SupportPresenceEvent) => {
+    if (payload.conversationId && payload.status) {
+      setConversations((prev) =>
+        prev.map((c) =>
+          c._id === payload.conversationId
+            ? { ...c, status: payload.status as ConversationStatus, assignedTo: payload.assignedTo ?? c.assignedTo }
+            : c,
+        ),
+      );
+    }
     load();
   }, [load]);
 
