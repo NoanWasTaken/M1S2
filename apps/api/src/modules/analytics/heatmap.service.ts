@@ -10,8 +10,8 @@ const SCREENSHOTS_DIR = path.resolve('screenshots');
 const TTL_MS = 60 * 60 * 1000;
 const MAX_FILES = 50;
 
-function cacheKey(appId: string, url: string): string {
-  return createHash('md5').update(`${appId}:${url}`).digest('hex');
+function cacheKey(appId: string, url: string, viewportWidth: number): string {
+  return createHash('md5').update(`${appId}:${url}:fullPage:${viewportWidth}`).digest('hex');
 }
 
 function cachePath(key: string): string {
@@ -36,10 +36,10 @@ function cachePrune(): void {
 }
 
 export class HeatmapService {
-  async getScreenshot(appId: string, url: string): Promise<Buffer> {
-    const key = cacheKey(appId, url);
+  async getScreenshot(appId: string, url: string, viewportWidth = 1280): Promise<Buffer> {
+    const key = cacheKey(appId, url, viewportWidth);
     const cpath = cachePath(key);
-    console.info('[heatmap][screenshot] start', { appId, url, cachePath: cpath });
+    console.info('[heatmap][screenshot] start', { appId, url, viewportWidth, cachePath: cpath });
 
     if (fs.existsSync(cpath)) {
       const stat = fs.statSync(cpath);
@@ -65,9 +65,9 @@ export class HeatmapService {
     });
     try {
       const page = await browser.newPage();
-      await page.setViewport({ width: 1280, height: 900 });
+      await page.setViewport({ width: viewportWidth, height: 900 });
       await page.goto(url, { waitUntil: 'networkidle2', timeout: 15000 });
-      const buf = Buffer.from(await page.screenshot({ type: 'webp', quality: 80 }));
+      const buf = Buffer.from(await page.screenshot({ type: 'webp', quality: 80, fullPage: true }));
 
       if (!fs.existsSync(SCREENSHOTS_DIR)) {
         fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
@@ -78,6 +78,7 @@ export class HeatmapService {
       console.info('[heatmap][screenshot] captured', {
         appId,
         url,
+        viewportWidth,
         bytes: buf.length,
       });
 
@@ -148,10 +149,15 @@ export class HeatmapService {
     console.info('[heatmap][data] pipeline', { appId, pipeline });
 
     const result = await EventModel.aggregate(pipeline);
+    const r0 = result[0] ?? null;
     console.info('[heatmap][data] aggregate_result', {
       appId,
       rows: result.length,
-      first: result[0] ?? null,
+      pageWidth: r0?.pageWidth,
+      pageHeight: r0?.pageHeight,
+      totalClicks: r0?.totalClicks,
+      pointsCount: r0?.points?.length,
+      samplePoints: r0?.points?.slice(0, 5),
     });
 
     return result[0] || { points: [], totalClicks: 0, pageWidth: 0, pageHeight: 0 };

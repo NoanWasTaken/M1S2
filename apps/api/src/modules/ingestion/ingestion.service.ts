@@ -1,7 +1,7 @@
 import { EventModel } from '../../models/event.js';
 import type { IngestBatchInput } from './ingestion.schema.js';
 import { normalizeUrl } from '../../utils/normalize-url.js';
-import { emitDashboardUpdate } from '../../realtime/live-stats.js';
+import { emitDashboardUpdate, emitHeatmapPoint } from '../../realtime/live-stats.js';
 
 export async function ingestBrowserEvents(
   appId: string,
@@ -41,6 +41,10 @@ export async function ingestBrowserEvents(
   await EventModel.insertMany(documents);
 
   void emitDashboardUpdate(appId);
+
+  for (const click of clickWithCoords) {
+    void emitHeatmapPoint(appId, { url: normalizeUrl(click.url), payload: click.payload ?? {} });
+  }
 
   return { received: documents.length };
 }
