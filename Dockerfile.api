@@ -5,6 +5,7 @@ COPY .npmrc package.json tsconfig.base.json ./
 COPY apps/api apps/api
 COPY packages packages
 
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 RUN npm install --workspace=apps/api
 RUN npm run build -w apps/api && npm prune --production
 
